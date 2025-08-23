@@ -1,0 +1,119 @@
+/* ===== 5. app.component.scss (Estilos con Tema Híbrido) ===== */
+
+/* --- Paleta de colores institucional como variables CSS --- */
+:host {
+  --uv-primary-green: #43A047;
+  --uv-secondary-blue: #1565C0;
+  --uv-info-blue: #0D47A1;
+  --uv-dark-text: #383838;
+  --uv-light-gray-bg: #ECEFF1;
+  --uv-border-color: #CFD8DC;
+}
+
+/* --- Aplicación de colores institucionales a botones --- */
+.btn-primary {
+  background-color: var(--uv-primary-green) !important;
+  border-color: var(--uv-primary-green) !important;
+}
+
+.btn-info {
+    background-color: var(--uv-info-blue) !important;
+    border-color: var(--uv-info-blue) !important;
+    color: white !important; /* CORRECCIÓN: Se añade el color de letra blanco */
+}
+
+.btn-outline-primary {
+    --bs-btn-color: var(--uv-primary-green);
+    --bs-btn-border-color: var(--uv-primary-green);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--uv-primary-green);
+    --bs-btn-hover-border-color: var(--uv-primary-green);
+}
+
+:host {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.curriculum-table {
+  font-size: 0.8rem;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+
+  th, td {
+    vertical-align: middle;
+    text-align: center;
+    border-color: var(--uv-border-color);
+    word-wrap: break-word;
+  }
+
+  th {
+    background-color: var(--uv-dark-text);
+    color: white;
+    cursor: help;
+  }
+  
+  .no-wrap {
+    white-space: nowrap;
+  }
+}
+
+.area-header td {
+  font-size: 0.9rem;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+/* --- Sistema de colores funcional por área --- */
+.area-style-afbg td { background-color: #FFEFE5 !important; color: #6B4028 !important; font-weight: bold; }
+.area-style-afbid td { background-color: #FFF7F2 !important; color: #7D5A49 !important; font-weight: bold; }
+.area-style-afd td { background-color: #E6F4EA !important; color: #2A5B38 !important; font-weight: bold; }
+.area-style-aft td { background-color: #EBF5FF !important; color: #2C4B68 !important; font-weight: bold; }
+.area-style-afel td { background-color: #FFFBE6 !important; color: #665624 !important; font-weight: bold; }
+
+.sub-area-header td {
+    background-color: #f8f9fa;
+    font-style: italic;
+    padding-left: 1.5rem !important;
+    text-align: left;
+}
+
+.badge {
+    &.status-P { background-color: var(--uv-secondary-blue); }
+    &.status-FBD { background-color: #198754; }
+    &.status-FD { background-color: #20c997; }
+    &.status-FI { background-color: #ffc107; color: #000; }
+    &.status-FT { background-color: #fd7e14; }
+    &.status-AFEL { background-color: #dc3545; }
+    &.status-BO { background-color: #6c757d; }
+}
+
+/* --- Estilos para la sección de gráficos --- */
+.charts-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: 2rem;
+  padding: 1rem 0;
+}
+
+.chart-card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  height: 500px;
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1040;
+}
+
+.modal {
+  z-index: 1050;
+}

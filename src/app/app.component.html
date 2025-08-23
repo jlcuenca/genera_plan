@@ -1,0 +1,415 @@
+<div class="container-fluid p-4 bg-light">
+  <header class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3">Plan de Estudios Interactivo o3k</h1>
+        <h2 class="h6 text-muted" *ngIf="planId">ID del Plan: {{ planId }}</h2>
+    </div>
+    <div>
+      <button class="btn btn-info me-2" (click)="currentView === 'table' ? showChartsView() : showTableView()">
+        <i class="fas fa-chart-pie"></i> {{ currentView === 'table' ? 'Dimensionamiento' : 'Ver Tabla' }}
+      </button>
+      <button class="btn btn-success me-2" (click)="generateAllDocs()" title="Generar un documento de Word para cada materia">
+        <i class="fas fa-file-word"></i> Generar Docs
+      </button>
+      <button class="btn btn-secondary me-2" (click)="exportToPdf()">Exportar a PDF</button>
+      <button class="btn btn-primary" (click)="saveChanges()">
+        <i class="fas fa-save"></i> Guardar Cambios
+      </button>
+    </div>
+  </header>
+
+  <div *ngIf="planDeEstudios && !isLoading" class="card mb-4">
+    <div class="card-body">
+      <h4 class="card-title d-flex justify-content-between">
+        {{ planDeEstudios.nombre }}
+        <button class="btn btn-sm btn-outline-secondary" (click)="openPlanModal()">Editar Plan</button>
+      </h4>
+      <div class="row g-3">
+        <div class="col-md-6"><strong>Opción Profesional:</strong> {{ planDeEstudios.opcionProfesional }}</div>
+        <div class="col-md-6"><strong>Nivel de Estudios:</strong> {{ planDeEstudios.nivelEstudios }}</div>
+        <div class="col-md-6"><strong>Título que se Otorga:</strong> {{ planDeEstudios.tituloOtorga }}</div>
+        <div class="col-md-6"><strong>Año del Plan de Estudios:</strong> {{ planDeEstudios.periodo }}</div>
+        <div class="col-md-6"><strong>Área Académica:</strong> {{ planDeEstudios.areaAcademica }}</div>
+        <div class="col-md-6"><strong>Facultad:</strong> {{ planDeEstudios.facultad }}</div>
+        <div class="col-md-6"><strong>Región:</strong> {{ planDeEstudios.regionImparte }}</div>
+        <div class="col-md-6"><strong>Sede:</strong> {{ planDeEstudios.sedeImparte }}</div>
+        <div class="col-md-6"><strong>Sistema:</strong> {{ planDeEstudios.sistema }}</div>
+        <div class="col-md-6"><strong>Modalidad:</strong> {{ planDeEstudios.modalidadEducativa }}</div>
+        <div class="col-md-6"><strong>Estatus:</strong> {{ planDeEstudios.estatus }}</div>
+        <div class="col-md-6"><strong>Créditos del Plan:</strong> {{ planDeEstudios.totalCreditosPlan }}</div>
+        <div class="col-md-6"><strong>Créditos para Título:</strong> {{ planDeEstudios.totalCreditosGrado }}</div>
+        <div class="col-12"><strong>Última Elaboración:</strong> {{ planDeEstudios.fechaElaboracion | date:'longDate' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Indicador de Carga -->
+  <div *ngIf="isLoading" class="text-center p-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <p class="mt-2">Cargando datos para el plan: <strong>{{ planId }}</strong>...</p>
+  </div>
+
+  <!-- VISTA DE TABLA -->
+  <div *ngIf="currentView === 'table' && !isLoading && planDeEstudios" class="table-responsive">
+    <table class="table table-bordered table-hover curriculum-table">
+      <thead class="table-dark sticky-top">
+        <tr>
+          <th style="width: 10%;" [title]="headerDefinitions.ACD">ACD</th>
+          <th style="width: 8%;">Clave</th>
+          <th style="width: 20%;">Experiencias Educativas</th>
+          <th style="width: 5%;" [title]="headerDefinitions.R">R</th>
+          <th class="text-center" [title]="headerDefinitions.Oe">Oe</th>
+          <th class="text-center" [title]="headerDefinitions.Rd">Rd</th>
+          <th class="text-center" [title]="headerDefinitions.Ma">Ma</th>
+          <th class="text-center" [title]="headerDefinitions.E">E</th>
+          <th class="text-center" [title]="headerDefinitions.Ca">Ca</th>
+          <th style="width: 3%;" [title]="headerDefinitions.HT">HT</th>
+          <th style="width: 3%;" [title]="headerDefinitions.HP">HP</th>
+          <th style="width: 3%;" [title]="headerDefinitions.HO">Ho</th>
+          <th style="width: 3%;" [title]="headerDefinitions.CR">CR</th>
+          <th style="width: 3%;" [title]="headerDefinitions.AF">AF</th>
+          <th style="width: 3%;" [title]="headerDefinitions.AA">AA</th>
+          <th style="width: 5%;">Estatus</th>
+          <th style="width: 12%;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let area of planDeEstudios.areas">
+          <tr class="area-header" [ngClass]="getAreaClass(area.nombre)">
+            <td [attr.colspan]="16">
+              <span>{{ area.nombre }}</span>
+            </td>
+            <td class="text-center">
+              <button class="btn btn-sm btn-outline-primary" (click)="openNewModal(area)" title="Agregar Materia en {{area.nombre}}">+</button>
+            </td>
+          </tr>
+          
+          <tr *ngFor="let materia of area.materias">
+              <td class="no-wrap">{{ materia.acd }}</td>
+              <td>{{ materia.clave }}</td>
+              <td>{{ materia.nombre }}</td>
+              <td>{{ materia.seriacion || '-' }}</td>
+              <td>{{ materia.oe }}</td>
+              <td>{{ materia.rd }}</td>
+              <td>{{ materia.ma }}</td>
+              <td>{{ materia.e }}</td>
+              <td>{{ materia.ca }}</td>
+              <td>{{ materia.ht }}</td>
+              <td>{{ materia.hp }}</td>
+              <td>{{ materia.ho }}</td>
+              <td class="fw-bold">{{ materia.cr }}</td>
+              <td>{{ materia.af }}</td>
+              <td>{{ materia.aa }}</td>
+              <td><span class="badge" [ngClass]="'status-' + materia.estatus">{{ materia.estatus }}</span></td>
+              <td>
+                <div class="btn-group btn-group-sm" role="group">
+                  <button class="btn btn-outline-success" (click)="generateDocForMateria(materia)" title="Generar Documento Word">W</button>
+                  <button class="btn btn-outline-secondary" (click)="duplicateMateria(materia, area)" title="Duplicar">D</button>
+                  <button class="btn btn-outline-info" (click)="openEditModal(materia, area)" title="Editar">E</button>
+                  <button class="btn btn-outline-danger" (click)="deleteMateria(materia)" title="Eliminar">X</button>
+                </div>
+              </td>
+          </tr>
+
+          <ng-container *ngFor="let subArea of area.subAreas">
+            <tr class="sub-area-header">
+              <td [attr.colspan]="16" class="fw-bold ps-4">
+                <span>{{ subArea.nombre }}</span>
+              </td>
+              <td class="text-center">
+                 <button class="btn btn-sm btn-outline-secondary" (click)="openNewModal(area, subArea)" title="Agregar Materia en {{subArea.nombre}}">+</button>
+              </td>
+            </tr>
+            <tr *ngFor="let materia of subArea.materias">
+              <td class="no-wrap">{{ materia.acd }}</td>
+              <td>{{ materia.clave }}</td>
+              <td>{{ materia.nombre }}</td>
+              <td>{{ materia.seriacion || '-' }}</td>
+              <td>{{ materia.oe }}</td>
+              <td>{{ materia.rd }}</td>
+              <td>{{ materia.ma }}</td>
+              <td>{{ materia.e }}</td>
+              <td>{{ materia.ca }}</td>
+              <td>{{ materia.ht }}</td>
+              <td>{{ materia.hp }}</td>
+              <td>{{ materia.ho }}</td>
+              <td class="fw-bold">{{ materia.cr }}</td>
+              <td>{{ materia.af }}</td>
+              <td>{{ materia.aa }}</td>
+              <td><span class="badge" [ngClass]="'status-' + materia.estatus">{{ materia.estatus }}</span></td>
+              <td>
+                 <div class="btn-group btn-group-sm" role="group">
+                  <button class="btn btn-outline-success" (click)="generateDocForMateria(materia)" title="Generar Documento Word">W</button>
+                  <button class="btn btn-outline-secondary" (click)="duplicateMateria(materia, area, subArea)" title="Duplicar">D</button>
+                  <button class="btn btn-outline-info" (click)="openEditModal(materia, area, subArea)" title="Editar">E</button>
+                  <button class="btn btn-outline-danger" (click)="deleteMateria(materia)" title="Eliminar">X</button>
+                </div>
+              </td>
+            </tr>
+          </ng-container>
+
+          <tr class="area-footer" [ngClass]="getAreaClass(area.nombre)">
+            <td [attr.colspan]="9" class="text-end">Total de horas y créditos del {{ area.nombre }}:</td>
+            <td>{{ calculateTotal(area, 'ht') }}</td>
+            <td>{{ calculateTotal(area, 'hp') }}</td>
+            <td>{{ calculateTotal(area, 'ho') }}</td>
+            <td>{{ calculateTotal(area, 'cr') }}</td>
+            <td [attr.colspan]="4"></td>
+          </tr>
+          
+          <ng-container *ngIf="area.nombre.includes('Básica General')">
+            <tr class="table-dark">
+              <th style="width: 10%;" [title]="headerDefinitions.ACD">ACD</th>
+              <th style="width: 8%;">Clave</th>
+              <th style="width: 20%;">Experiencias Educativas</th>
+              <th style="width: 5%;" [title]="headerDefinitions.R">R</th>
+              <th class="text-center" [title]="headerDefinitions.Oe">Oe</th>
+              <th class="text-center" [title]="headerDefinitions.Rd">Rd</th>
+              <th class="text-center" [title]="headerDefinitions.Ma">Ma</th>
+              <th class="text-center" [title]="headerDefinitions.E">E</th>
+              <th class="text-center" [title]="headerDefinitions.Ca">Ca</th>
+              <th style="width: 3%;" [title]="headerDefinitions.HT">HT</th>
+              <th style="width: 3%;" [title]="headerDefinitions.HP">HP</th>
+              <th style="width: 3%;" [title]="headerDefinitions.HO">HO</th>
+              <th style="width: 3%;" [title]="headerDefinitions.CR">CR</th>
+              <th style="width: 3%;" [title]="headerDefinitions.AF">AF</th>
+              <th style="width: 3%;" [title]="headerDefinitions.AA">AA</th>
+              <th style="width: 5%;">Estatus</th>
+              <th style="width: 12%;">Acciones</th>
+            </tr>
+          </ng-container>
+        </ng-container>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- VISTA DE GRÁFICAS -->
+  <div *ngIf="currentView === 'charts'" class="charts-container">
+    <div class="chart-card">
+        <canvas id="hoursChart"></canvas>
+    </div>
+    <div class="chart-card">
+        <canvas id="creditsChart"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modales -->
+<div class="modal-backdrop" *ngIf="isMateriaModalOpen"></div>
+<div class="modal" tabindex="-1" *ngIf="isMateriaModalOpen" style="display: block;">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content" *ngIf="editingMateria">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ isNewMateria ? 'Agregar Nueva Materia' : 'Editando Materia: ' + editingMateria.nombre }}</h5>
+        <button type="button" class="btn-close" (click)="closeMateriaModal()"></button>
+      </div>
+      <div class="modal-body">
+        <form #materiaForm="ngForm" (ngSubmit)="saveMateria()">
+          <div class="row">
+            <div class="col-md-3 mb-3">
+              <label for="clave" class="form-label">Clave</label>
+              <input type="text" class="form-control" id="clave" name="clave" [(ngModel)]="editingMateria.clave" required [disabled]="!isNewMateria">
+            </div>
+            <div class="col-md-9 mb-3">
+              <label for="nombre" class="form-label">Nombre</label>
+              <input type="text" class="form-control" id="nombre" name="nombre" [(ngModel)]="editingMateria.nombre" required>
+            </div>
+          </div>
+          <div class="row">
+             <div class="col-md-6 mb-3">
+              <label for="acd" class="form-label">ACD</label>
+              <input type="text" class="form-control" id="acd" name="acd" [(ngModel)]="editingMateria.acd">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="seriacion" class="form-label">R (Requisito)</label>
+              <input type="text" class="form-control" id="seriacion" name="seriacion" [(ngModel)]="editingMateria.seriacion">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md mb-2">
+                <label for="oe" class="form-label">Oe</label>
+                <select class="form-select" id="oe" name="oe" [(ngModel)]="editingMateria.oe">
+                    <option [ngValue]="null">--</option>
+                    <option *ngFor="let option of optionsOe" [value]="option">{{ option }}</option>
+                </select>
+            </div>
+            <div class="col-md mb-2">
+                <label for="rd" class="form-label">Rd</label>
+                <select class="form-select" id="rd" name="rd" [(ngModel)]="editingMateria.rd">
+                    <option [ngValue]="null">--</option>
+                    <option *ngFor="let option of optionsRd" [value]="option">{{ option }}</option>
+                </select>
+            </div>
+            <div class="col-md mb-2">
+                <label for="ma" class="form-label">Ma</label>
+                <select class="form-select" id="ma" name="ma" [(ngModel)]="editingMateria.ma">
+                    <option [ngValue]="null">--</option>
+                    <option *ngFor="let option of optionsMa" [value]="option">{{ option }}</option>
+                </select>
+            </div>
+            <div class="col-md mb-2">
+                <label for="e" class="form-label">E</label>
+                <select class="form-select" id="e" name="e" [(ngModel)]="editingMateria.e">
+                    <option [ngValue]="null">--</option>
+                    <option *ngFor="let option of optionsE" [value]="option">{{ option }}</option>
+                </select>
+            </div>
+            <div class="col-md mb-2">
+                <label for="ca" class="form-label">Ca</label>
+                <select class="form-select" id="ca" name="ca" [(ngModel)]="editingMateria.ca">
+                    <option [ngValue]="null">--</option>
+                    <option *ngFor="let option of optionsCa" [value]="option">{{ option }}</option>
+                </select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="af" class="form-label">AF</label>
+              <select class="form-select" id="af" name="af" [(ngModel)]="editingMateria.af">
+                <option [ngValue]="null">--</option>
+                <option *ngFor="let option of optionsAf" [value]="option">{{ option }}</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="aa" class="form-label">AA</label>
+              <select class="form-select" id="aa" name="aa" [(ngModel)]="editingMateria.aa">
+                <option [ngValue]="null">--</option>
+                <option *ngFor="let option of optionsAa" [value]="option">{{ option }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-3 mb-3">
+              <label for="ht" class="form-label">HT</label>
+              <input type="number" class="form-control" id="ht" name="ht" [(ngModel)]="editingMateria.ht" (ngModelChange)="calculateCredits()">
+            </div>
+            <div class="col-md-3 mb-3">
+              <label for="hp" class="form-label">HP</label>
+              <input type="number" class="form-control" id="hp" name="hp" [(ngModel)]="editingMateria.hp" (ngModelChange)="calculateCredits()">
+            </div>
+            <div class="col-md-3 mb-3">
+              <label for="ho" class="form-label">HO</label>
+              <input type="number" class="form-control" id="ho" name="ho" [(ngModel)]="editingMateria.ho" (ngModelChange)="calculateCredits()">
+            </div>
+            <div class="col-md-3 mb-3">
+              <label for="cr" class="form-label">CR</label>
+              <input type="number" class="form-control" id="cr" name="cr" [(ngModel)]="editingMateria.cr" [disabled]="true">
+            </div>
+          </div>
+          <hr>
+          <div class="mb-3">
+            <label for="justificacion" class="form-label">Justificación</label>
+            <textarea class="form-control" id="justificacion" name="justificacion" rows="3" [(ngModel)]="editingMateria.justificacion"></textarea>
+          </div>
+           <div class="mb-3">
+            <label for="unidadCompetencia" class="form-label">Unidad de Competencia</label>
+            <textarea class="form-control" id="unidadCompetencia" name="unidadCompetencia" rows="3" [(ngModel)]="editingMateria.unidadCompetencia"></textarea>
+          </div>
+           <div class="mb-3">
+            <label for="saberesHeuristicos" class="form-label">Saberes Heurísticos</label>
+            <textarea class="form-control" id="saberesHeuristicos" name="saberesHeuristicos" rows="3" [(ngModel)]="editingMateria.saberesHeuristicos"></textarea>
+          </div>
+           <div class="mb-3">
+            <label for="saberesTeoricos" class="form-label">Saberes Teóricos</label>
+            <textarea class="form-control" id="saberesTeoricos" name="saberesTeoricos" rows="3" [(ngModel)]="editingMateria.saberesTeoricos"></textarea>
+          </div>
+           <div class="mb-3">
+            <label for="saberesAxiologicos" class="form-label">Saberes Axiológicos</label>
+            <textarea class="form-control" id="saberesAxiologicos" name="saberesAxiologicos" rows="3" [(ngModel)]="editingMateria.saberesAxiologicos"></textarea>
+          </div>
+           <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="closeMateriaModal()">Cancelar</button>
+              <button type="submit" class="btn btn-primary" [disabled]="!materiaForm.form.valid">Guardar</button>
+            </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" tabindex="-1" *ngIf="isPlanModalOpen" style="display: block;">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" *ngIf="editingPlan">
+      <div class="modal-header">
+        <h5 class="modal-title">Editando Plan de Estudios</h5>
+        <button type="button" class="btn-close" (click)="closePlanModal()"></button>
+      </div>
+      <div class="modal-body">
+        <form #planForm="ngForm" (ngSubmit)="savePlan()">
+          <div class="row g-3">
+            <div class="col-md-12">
+                <label for="planNombre" class="form-label">Nombre del Plan</label>
+                <input type="text" class="form-control" id="planNombre" name="planNombre" [(ngModel)]="editingPlan.nombre" required>
+            </div>
+            <div class="col-md-6">
+                <label for="opcionProfesional" class="form-label">Opción Profesional</label>
+                <input type="text" class="form-control" id="opcionProfesional" name="opcionProfesional" [(ngModel)]="editingPlan.opcionProfesional" required>
+            </div>
+            <div class="col-md-6">
+                <label for="nivelEstudios" class="form-label">Nivel de Estudios</label>
+                <input type="text" class="form-control" id="nivelEstudios" name="nivelEstudios" [(ngModel)]="editingPlan.nivelEstudios" required>
+            </div>
+            <div class="col-md-12">
+                <label for="tituloOtorga" class="form-label">Título que se Otorga</label>
+                <input type="text" class="form-control" id="tituloOtorga" name="tituloOtorga" [(ngModel)]="editingPlan.tituloOtorga" required>
+            </div>
+            <div class="col-md-6">
+                <label for="areaAcademica" class="form-label">Área Académica</label>
+                <input type="text" class="form-control" id="areaAcademica" name="areaAcademica" [(ngModel)]="editingPlan.areaAcademica" required>
+            </div>
+            <div class="col-md-6">
+                <label for="facultad" class="form-label">Facultad</label>
+                <input type="text" class="form-control" id="facultad" name="facultad" [(ngModel)]="editingPlan.facultad" required>
+            </div>
+            <div class="col-md-6">
+                <label for="planPeriodo" class="form-label">Año del Plan de Estudios</label>
+                <input type="text" class="form-control" id="planPeriodo" name="planPeriodo" [(ngModel)]="editingPlan.periodo" required>
+            </div>
+            <div class="col-md-6">
+                <label for="regionImparte" class="form-label">Región</label>
+                <input type="text" class="form-control" id="regionImparte" name="regionImparte" [(ngModel)]="editingPlan.regionImparte" required>
+            </div>
+            <div class="col-md-6">
+                <label for="sedeImparte" class="form-label">Sede</label>
+                <input type="text" class="form-control" id="sedeImparte" name="sedeImparte" [(ngModel)]="editingPlan.sedeImparte" required>
+            </div>
+            <div class="col-md-6">
+                <label for="sistema" class="form-label">Sistema</label>
+                <input type="text" class="form-control" id="sistema" name="sistema" [(ngModel)]="editingPlan.sistema" required>
+            </div>
+            <div class="col-md-6">
+                <label for="modalidadEducativa" class="form-label">Modalidad Educativa</label>
+                <input type="text" class="form-control" id="modalidadEducativa" name="modalidadEducativa" [(ngModel)]="editingPlan.modalidadEducativa" required>
+            </div>
+            <div class="col-md-6">
+                <label for="totalCreditosPlan" class="form-label">Créditos del Plan</label>
+                <input type="number" class="form-control" id="totalCreditosPlan" name="totalCreditosPlan" [(ngModel)]="editingPlan.totalCreditosPlan" required>
+            </div>
+            <div class="col-md-6">
+                <label for="totalCreditosGrado" class="form-label">Créditos para Título</label>
+                <input type="number" class="form-control" id="totalCreditosGrado" name="totalCreditosGrado" [(ngModel)]="editingPlan.totalCreditosGrado" required>
+            </div>
+            <div class="col-md-6">
+                <label for="estatus" class="form-label">Estatus</label>
+                <select class="form-select" id="estatus" name="estatus" [(ngModel)]="editingPlan.estatus" required>
+                    <option value="Aprobado">Aprobado</option>
+                    <option value="Pendiente">Pendiente</option>
+                </select>
+            </div>
+             <div class="col-md-6">
+                <label for="planFecha" class="form-label">Fecha de Elaboración</label>
+                <input type="date" class="form-control" id="planFecha" name="planFecha" [(ngModel)]="editingPlan.fechaElaboracion" required>
+            </div>
+        </div>
+          <div class="modal-footer mt-3">
+            <button type="button" class="btn btn-secondary" (click)="closePlanModal()">Cancelar</button>
+            <button type="submit" class="btn btn-primary" [disabled]="!planForm.form.valid">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
