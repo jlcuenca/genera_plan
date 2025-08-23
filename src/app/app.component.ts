@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, KeyValue } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterOutlet } from '@angular/router';
+// Se añaden Router y NavigationEnd para escuchar los eventos de navegación
+import { ActivatedRoute, RouterOutlet, Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators'; // Se añade el operador filter
 import { CurriculumService } from './curriculum.service';
 import {
   AreaFormacion, Materia, SubArea, PlanDeEstudios, CaracterMateria, OportunidadEvaluacion,
@@ -45,34 +47,37 @@ export class AppComponent implements OnInit {
   optionsAa = Object.values(AmbienteAprendizaje);
   optionsEstatus = Object.values(EstatusMateria);
   headerDefinitions = {
-    ACD: 'Agrupación curricular distintiva de la EE',
-    R: 'Requisitos (Pre-requisitos)',
-    Oe: 'Oportunidades de evaluación (O = Ordinario, T = Todas)',
-    Rd: 'Relación disciplinar (I = Interdisciplinario, M = Multidisciplinario)',
-    Ma: 'Modalidad de aprendizaje (C = Curso, T = Taller, CT = Curso taller, S = Seminario, etc.)',
-    E: 'Espacio (IPA = Intraprograma educativo, IaF = Intrafacultad, etc.)',
-    Ca: 'Carácter (Ob = Obligatoria, Op = Optativa)',
-    HT: 'Número de horas teóricas semanales',
-    HP: 'Número de horas prácticas semanales',
-    HO: 'Número de horas de trabajo autónomo del estudiante',
-    CR: 'Número de créditos (calculado)',
-    AF: 'Área de formación (AFB = Básica, AFD = Disciplinar, etc.)',
-    AA: 'Ambiente de aprendizaje (P = Presencial, V = Virtual, M = Mixto)'
+    ACD: 'Agrupación curricular distintiva de la EE', R: 'Requisitos (Pre-requisitos)', Oe: 'Oportunidades de evaluación (O = Ordinario, T = Todas)', Rd: 'Relación disciplinar (I = Interdisciplinario, M = Multidisciplinario)', Ma: 'Modalidad de aprendizaje (C = Curso, T = Taller, CT = Curso taller, S = Seminario, etc.)', E: 'Espacio (IPA = Intraprograma educativo, IaF = Intrafacultad, etc.)', Ca: 'Carácter (Ob = Obligatoria, Op = Optativa)', HT: 'Número de horas teóricas semanales', HP: 'Número de horas prácticas semanales', HO: 'Número de horas de trabajo autónomo del estudiante', CR: 'Número de créditos (calculado)', AF: 'Área de formación (AFB = Básica, AFD = Disciplinar, etc.)', AA: 'Ambiente de aprendizaje (P = Presencial, V = Virtual, M = Mixto)'
   };
 
   constructor(
     private curriculumService: CurriculumService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private router: Router // Se inyecta el Router principal
   ) {}
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe(params => {
-      const id = params.get('planId');
+    // CORRECCIÓN: Se escucha a los eventos del router para obtener el ID del plan.
+    // Esto soluciona el problema de que el componente se cargue antes de que
+    // los parámetros de la ruta estén disponibles.
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      let currentRoute = this.route.root;
+      while (currentRoute.firstChild) {
+        currentRoute = currentRoute.firstChild;
+      }
+
+      const id = currentRoute.snapshot.paramMap.get('planId');
+
       if (id) {
-        this.planId = id;
-        this.loadData();
+        // Se comprueba si el ID ha cambiado para no recargar datos innecesariamente
+        if (this.planId !== id) {
+          this.planId = id;
+          this.loadData();
+        }
       } else {
-        console.error("No se encontró un ID de plan en la URL.");
+        console.error("La navegación del router finalizó, pero no se encontró un 'planId' en la ruta activa.");
         this.isLoading = false;
       }
     });
@@ -80,13 +85,9 @@ export class AppComponent implements OnInit {
 
   loadData(): void {
     if (!this.planId) return;
-
     this.isLoading = true;
     this.curriculumService.getPlanDeEstudios(this.planId).subscribe({
-      next: (data) => {
-        this.planDeEstudios = data;
-        this.isLoading = false;
-      },
+      next: (data) => { this.planDeEstudios = data; this.isLoading = false; },
       error: (err: any) => {
         if (err.status === 404) {
           console.log(`El plan '${this.planId}' no existe. Creando una plantilla nueva.`);
@@ -103,12 +104,8 @@ export class AppComponent implements OnInit {
     if (this.planDeEstudios && this.planId) {
         this.updatePlanDate();
         this.curriculumService.saveFullCurriculum(this.planId, this.planDeEstudios).subscribe({
-          next: (response) => {
-            console.log(`Guardado con éxito: ${response.message}`);
-          },
-          error: (err: any) => {
-            console.error('Error al guardar los datos.', err);
-          }
+          next: (response) => { console.log(`Guardado con éxito: ${response.message}`); },
+          error: (err: any) => { console.error('Error al guardar los datos.', err); }
         });
     }
   }
