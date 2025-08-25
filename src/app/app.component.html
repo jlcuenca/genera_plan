@@ -1,14 +1,14 @@
 <div class="container-fluid p-4 bg-light">
   <header class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h1 class="h3">Plan de Estudios Interactivo o3k</h1>
+        <h1 class="h3">Plan de Estudios Interactivo</h1>
         <h2 class="h6 text-muted" *ngIf="planId">ID del Plan: {{ planId }}</h2>
     </div>
     <div>
       <button class="btn btn-info me-2" (click)="currentView === 'table' ? showChartsView() : showTableView()">
         <i class="fas fa-chart-pie"></i> {{ currentView === 'table' ? 'Dimensionamiento' : 'Ver Tabla' }}
       </button>
-      <button class="btn btn-success me-2" (click)="generateAllDocs()" title="Generar un documento de Word para cada materia">
+      <button class="btn btn-success me-2" (click)="generateAllDocs()" title="Generar un documento de Word para cada exp. edu.">
         <i class="fas fa-file-word"></i> Generar Docs
       </button>
       <button class="btn btn-secondary me-2" (click)="exportToPdf()">Exportar a PDF</button>
@@ -34,10 +34,10 @@
         <div class="col-md-6"><strong>Región:</strong> {{ planDeEstudios.regionImparte }}</div>
         <div class="col-md-6"><strong>Sede:</strong> {{ planDeEstudios.sedeImparte }}</div>
         <div class="col-md-6"><strong>Sistema:</strong> {{ planDeEstudios.sistema }}</div>
-        <div class="col-md-6"><strong>Modalidad:</strong> {{ planDeEstudios.modalidadEducativa }}</div>
+        <div class="col-md-6"><strong>Modalidad educativa:</strong> {{ planDeEstudios.modalidadEducativa }}</div>
         <div class="col-md-6"><strong>Estatus:</strong> {{ planDeEstudios.estatus }}</div>
-        <div class="col-md-6"><strong>Créditos del Plan:</strong> {{ planDeEstudios.totalCreditosPlan }}</div>
-        <div class="col-md-6"><strong>Créditos para Título:</strong> {{ planDeEstudios.totalCreditosGrado }}</div>
+        <div class="col-md-6"><strong>Total de créditos del Plan de estudios:</strong> {{ planDeEstudios.totalCreditosPlan }}</div>
+        <div class="col-md-6"><strong>Total de créditos para obtener el grado:</strong> {{ planDeEstudios.totalCreditosGrado }}</div>
         <div class="col-12"><strong>Última Elaboración:</strong> {{ planDeEstudios.fechaElaboracion | date:'longDate' }}</div>
       </div>
     </div>
@@ -82,7 +82,7 @@
               <span>{{ area.nombre }}</span>
             </td>
             <td class="text-center">
-              <button class="btn btn-sm btn-outline-primary" (click)="openNewModal(area)" title="Agregar Materia en {{area.nombre}}">+</button>
+              <button class="btn btn-sm btn-outline-primary" (click)="openNewModal(area)" title="Agregar exp. edu. en {{area.nombre}}">+</button>
             </td>
           </tr>
           
@@ -119,7 +119,7 @@
                 <span>{{ subArea.nombre }}</span>
               </td>
               <td class="text-center">
-                 <button class="btn btn-sm btn-outline-secondary" (click)="openNewModal(area, subArea)" title="Agregar Materia en {{subArea.nombre}}">+</button>
+                 <button class="btn btn-sm btn-outline-secondary" (click)="openNewModal(area, subArea)" title="Agregar exp. edu. en {{subArea.nombre}}">+</button>
               </td>
             </tr>
             <tr *ngFor="let materia of subArea.materias">
@@ -203,7 +203,7 @@
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content" *ngIf="editingMateria">
       <div class="modal-header">
-        <h5 class="modal-title">{{ isNewMateria ? 'Agregar Nueva Materia' : 'Editando Materia: ' + editingMateria.nombre }}</h5>
+        <h5 class="modal-title">{{ isNewMateria ? 'Agregar Nueva exp. edu.' : 'Editando exp. edu.: ' + editingMateria.nombre }}</h5>
         <button type="button" class="btn-close" (click)="closeMateriaModal()"></button>
       </div>
       <div class="modal-body">
@@ -389,7 +389,7 @@
                 <input type="number" class="form-control" id="totalCreditosPlan" name="totalCreditosPlan" [(ngModel)]="editingPlan.totalCreditosPlan" required>
             </div>
             <div class="col-md-6">
-                <label for="totalCreditosGrado" class="form-label">Créditos para Título</label>
+                <label for="totalCreditosGrado" class="form-label">Créditos para obtener grado</label>
                 <input type="number" class="form-control" id="totalCreditosGrado" name="totalCreditosGrado" [(ngModel)]="editingPlan.totalCreditosGrado" required>
             </div>
             <div class="col-md-6">

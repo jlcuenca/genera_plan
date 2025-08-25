@@ -395,8 +395,8 @@ export class AppComponent implements OnInit {
     addLine("Sistema:", this.planDeEstudios.sistema);
     addLine("Modalidad Educativa:", this.planDeEstudios.modalidadEducativa);
     addLine("Estatus:", this.planDeEstudios.estatus);
-    addLine("Total de Créditos del Plan:", this.planDeEstudios.totalCreditosPlan);
-    addLine("Créditos para Obtener Título:", this.planDeEstudios.totalCreditosGrado);
+    addLine("Total de Créditos del Plan de estudios:", this.planDeEstudios.totalCreditosPlan);
+    addLine("Total de créditos para obtener el grado:", this.planDeEstudios.totalCreditosGrado);
     addLine("Última Elaboración:", this.planDeEstudios.fechaElaboracion);
     const head = [['ACD', 'Experiencia Educativa', 'R', 'Oe', 'Rd', 'Ma', 'E', 'Ca', 'HT', 'HP', 'HO', 'CR', 'AF', 'AA']];
     const body: any[] = [];
