@@ -46,6 +46,8 @@ export enum CaracterMateria {
 
 export enum AreaFormacionEnum {
   Basica = 'AFB',
+  BasicaGeneral = 'AFBG',
+  IniciacionDisciplina = 'AFBID',
   Disciplinar = 'AFD',
   Terminal = 'AFT',
   EleccionLibre = 'AFEL'

@@ -2,15 +2,18 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule, KeyValue } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterOutlet, Router, NavigationEnd } from '@angular/router';
-import { filter } from 'rxjs/operators';
+import { filter, firstValueFrom } from 'rxjs';
 import { CurriculumService } from './curriculum.service';
 import {
   AreaFormacion, Materia, SubArea, PlanDeEstudios, CaracterMateria, OportunidadEvaluacion,
   RelacionDisciplinar, ModalidadAprendizaje, Espacio, AreaFormacionEnum, AmbienteAprendizaje, EstatusMateria,
   getEmptyPlan
 } from './curriculum.model';
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableCell, TableRow, WidthType, VerticalAlign, PageBreak, BorderStyle, AlignmentType, HeightRule } from 'docx';
 import { saveAs } from 'file-saver';
+import PizZip from 'pizzip';
+import Docxtemplater from 'docxtemplater';
+import { HttpClient } from '@angular/common/http';
+
 
 declare var Chart: any;
 declare var jsPDF: any;
@@ -60,7 +63,8 @@ export class AppComponent implements OnInit {
   constructor(
     private curriculumService: CurriculumService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private http: HttpClient // Inyectar HttpClient
   ) {}
 
   ngOnInit(): void {
@@ -91,7 +95,6 @@ export class AppComponent implements OnInit {
     this.isLoading = true;
     this.curriculumService.getPlanDeEstudios(this.planId).subscribe({
       next: (data) => {
-        // Asegurarse de que cada materia tenga un _id para compatibilidad hacia atrás
         data.areas.forEach(area => {
             area.materias?.forEach(m => { if (!m._id) m._id = generateUUID(); });
             area.subAreas?.forEach(sa => {
@@ -302,7 +305,6 @@ export class AppComponent implements OnInit {
     } else {
       let found = false;
       for (const area of this.planDeEstudios.areas) {
-        // Buscar por _id en lugar de clave
         const materiaIndex = area.materias.findIndex(m => m._id === this.editingMateria!._id);
         if (materiaIndex !== -1) {
           area.materias[materiaIndex] = { ...area.materias[materiaIndex], ...this.editingMateria };
@@ -310,7 +312,6 @@ export class AppComponent implements OnInit {
         }
         if (area.subAreas) {
           for (const subArea of area.subAreas) {
-            // Buscar por _id en lugar de clave
             const subMateriaIndex = subArea.materias.findIndex(m => m._id === this.editingMateria!._id);
             if (subMateriaIndex !== -1) {
               subArea.materias[subMateriaIndex] = { ...subArea.materias[subMateriaIndex], ...this.editingMateria };
@@ -330,7 +331,6 @@ export class AppComponent implements OnInit {
     if (confirm(`¿Estás seguro de que quieres eliminar la materia "${materiaToDelete.nombre}"?`)) {
         let found = false;
         for (const area of this.planDeEstudios.areas) {
-            // Buscar por _id en lugar de clave
             let materiaIndex = area.materias.findIndex(m => m._id === materiaToDelete._id);
             if (materiaIndex !== -1) {
                 area.materias.splice(materiaIndex, 1);
@@ -338,7 +338,6 @@ export class AppComponent implements OnInit {
             }
             if (area.subAreas) {
                 for (const subArea of area.subAreas) {
-                     // Buscar por _id en lugar de clave
                     let subMateriaIndex = subArea.materias.findIndex(m => m._id === materiaToDelete._id);
                     if (subMateriaIndex !== -1) {
                         subArea.materias.splice(subMateriaIndex, 1);
@@ -360,7 +359,7 @@ export class AppComponent implements OnInit {
     if (confirm(`¿Duplicar la materia "${materiaToDuplicate.nombre}"?\nEl nuevo código será: ${newKey}`)) {
         const newMateria: Materia = {
            ...materiaToDuplicate,
-            _id: generateUUID(), // Generar un nuevo ID único para la copia
+            _id: generateUUID(),
             clave: newKey,
             nombre: `${materiaToDuplicate.nombre} (Copia)`
         };
@@ -386,7 +385,7 @@ export class AppComponent implements OnInit {
       const ht = this.editingMateria.ht || 0;
       const hp = this.editingMateria.hp || 0;
       const ho = this.editingMateria.ho || 0;
-      this.editingMateria.cr = Math.round((ht * 1) + (hp * 1)); // Ajustar cálculo si es necesario
+      this.editingMateria.cr = Math.round((ht * 1) + (hp * 1));
     }
   }
   
@@ -480,86 +479,60 @@ export class AppComponent implements OnInit {
     return '#f8f9fa';
   }
 
-  generateDocForMateria(materia: Materia): void {
+  async generateDocForMateria(materia: Materia): Promise<void> {
+    console.log("Iniciando generación de documento para:", materia.nombre);
+    
     try {
-        const createCell = (text: string, bold = false, options: any = {}) => {
-            const children = text.split('\n').map(line => new Paragraph({
-                children: [new TextRun({ text: line, bold, size: 18 })], // size: 18 -> 9pt font
-                alignment: options.alignment || AlignmentType.LEFT,
-            }));
-            return new TableCell({ ...options, children: children, verticalAlign: VerticalAlign.CENTER });
-        };
+      const templateUrl = 'assets/templates/_EE.docx';
+      console.log(`Cargando plantilla desde: ${templateUrl}`);
+      
+      const templateContent = await firstValueFrom(
+        this.http.get(templateUrl, { responseType: 'arraybuffer' })
+      );
 
-        const createHeaderCell = (text: string, options: any = {}) => createCell(text, true, options);
-        const createValueCell = (text: string | null | number, options: any = {}) => createCell(String(text ?? '_'), false, options);
+      console.log("Plantilla cargada exitosamente. Procesando...");
+      
+      // CAMBIO: Se corrige la forma de instanciar Docxtemplater
+      const zip = new PizZip(templateContent);
+      const doc = new Docxtemplater()
+        .loadZip(zip)
+        .setOptions({ paragraphLoop: true, linebreaks: true });
 
-        const doc = new Document({
-            sections: [{
-                children: [
-                    new Paragraph({ text: "Dirección General de Desarrollo Académico e Innovación Educativa", alignment: AlignmentType.CENTER, style: "Heading2" }),
-                    new Paragraph({ text: "Dirección de Innovación Educativa / Departamento de Desarrollo Curricular", alignment: AlignmentType.CENTER, style: "Heading3" }),
-                    new Paragraph({ text: "Programa de experiencia educativa", alignment: AlignmentType.CENTER, style: "Heading1" }),
-                    new Paragraph({ text: `Opción Profesional en ________ año ${this.planDeEstudios?.periodo || '____'}`, alignment: AlignmentType.CENTER }),
-                    new Paragraph({ text: " " }),
+      const dataForTemplate = {
+        area_academica: this.planDeEstudios?.areaAcademica || 'N/A',
+        programa_educativo: this.planDeEstudios?.nombre || 'N/A',
+        clave: materia.clave,
+        nombre_ee: materia.nombre,
+        area_formacion: materia.af || 'N/A',
+        caracter: materia.ca || 'N/A',
+        ht: materia.ht,
+        hp: materia.hp,
+        ho: materia.ho,
+        total_horas: (materia.ht || 0) + (materia.hp || 0),
+        creditos: materia.cr,
+        prerrequisitos: materia.seriacion || 'Ninguno',
+        justificacion: materia.justificacion || '',
+        unidad_competencia: materia.unidadCompetencia || '',
+        saberes_heuristicos: materia.saberesHeuristicos || '',
+        saberes_teoricos: materia.saberesTeoricos || '',
+        saberes_axiologicos: materia.saberesAxiologicos || ''
+      };
 
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        rows: [
-                            new TableRow({ height: { value: 400, rule: HeightRule.ATLEAST }, children: [createHeaderCell("1. Área Académica"), createValueCell(this.planDeEstudios?.areaAcademica || null)] }),
-                            new TableRow({ height: { value: 400, rule: HeightRule.ATLEAST }, children: [createHeaderCell("2. Programa Educativo"), createValueCell("Contaduría")] }),
-                            new TableRow({ height: { value: 400, rule: HeightRule.ATLEAST }, children: [createHeaderCell("5. Código"), createValueCell(materia.clave)] }),
-                            new TableRow({ height: { value: 400, rule: HeightRule.ATLEAST }, children: [createHeaderCell("6. Nombre de la Experiencia Educativa"), createValueCell(materia.nombre, {alignment: AlignmentType.CENTER})] }),
-                            new TableRow({ height: { value: 400, rule: HeightRule.ATLEAST }, children: [createHeaderCell("7. Área de Formación"), createValueCell(materia.af)] }),
-                            new TableRow({ height: { value: 400, rule: HeightRule.ATLEAST }, children: [createHeaderCell("8. Carácter"), createValueCell(materia.ca)] }),
-                        ],
-                    }),
-                    new Paragraph({ text: " " }),
-                    new Paragraph({ text: "9. Agrupación curricular distintiva (competencia, academia, módulo, tema transversal o, equivalente)" }),
-                    new Paragraph({ text: materia.acd || 'Academia', style: "Heading3" }),
-                    new Paragraph({ text: " " }),
+      doc.setData(dataForTemplate);
+      doc.render();
 
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        rows: [
-                             new TableRow({ height: { value: 400, rule: HeightRule.ATLEAST }, children: [
-                                createHeaderCell("10. Valores", { verticalAlign: VerticalAlign.CENTER }),
-                                new TableCell({
-                                    children: [
-                                        new Table({
-                                            width: { size: 100, type: WidthType.PERCENTAGE },
-                                            rows: [
-                                                new TableRow({ children: [createHeaderCell("Horas Teóricas"), createHeaderCell("Horas Prácticas"), createHeaderCell("Horas Otras"), createHeaderCell("Total de Horas"), createHeaderCell("Créditos"), createHeaderCell("Equivalencia (s)")] }),
-                                                new TableRow({ children: [createValueCell(materia.ht, {alignment: AlignmentType.CENTER}), createValueCell(materia.hp, {alignment: AlignmentType.CENTER}), createValueCell(materia.ho, {alignment: AlignmentType.CENTER}), createValueCell(materia.ht + materia.hp, {alignment: AlignmentType.CENTER}), createValueCell(materia.cr, {alignment: AlignmentType.CENTER}), createValueCell(null)] }),
-                                            ]
-                                        })
-                                    ]
-                                })
-                            ]}),
-                        ]
-                    }),
-                     new Paragraph({ text: " " }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        rows: [
-                            new TableRow({ height: { value: 400, rule: HeightRule.ATLEAST }, children: [createHeaderCell("15. EE prerrequisito(s)"), createValueCell(materia.seriacion)] }),
-                            new TableRow({ height: { value: 400, rule: HeightRule.ATLEAST }, children: [createHeaderCell("17. Justificación"), createValueCell(materia.justificacion || null)] }),
-                            new TableRow({ height: { value: 400, rule: HeightRule.ATLEAST }, children: [createHeaderCell("18. Unidad de competencia (UC)"), createValueCell(materia.unidadCompetencia || null)] }),
-                        ]
-                    }),
-                    new Paragraph({ text: " " }),
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        rows: [
-                            new TableRow({ height: { value: 400, rule: HeightRule.ATLEAST }, children: [createHeaderCell("19. Saberes", {columnSpan: 3, alignment: AlignmentType.CENTER})]}),
-                            new TableRow({ height: { value: 400, rule: HeightRule.ATLEAST }, children: [createHeaderCell("Heurísticos"), createHeaderCell("Teóricos"), createHeaderCell("Axiológicos")]}),
-                            new TableRow({ height: { value: 400, rule: HeightRule.ATLEAST }, children: [createValueCell(materia.saberesHeuristicos || null), createValueCell(materia.saberesTeoricos || null), createValueCell(materia.saberesAxiologicos || null)]}),
-                        ]
-                    }),
-                ],
-            }],
-        });
-        Packer.toBlob(doc).then(blob => { saveAs(blob, `PEE_${materia.clave}.docx`); });
-    } catch (error) { console.error("Error al generar el documento de Word:", error); }
+      const out = doc.getZip().generate({
+        type: 'blob',
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      });
+
+      saveAs(out, `PEE_${materia.clave}_${materia.nombre}.docx`);
+      console.log("Documento generado y descargado exitosamente.");
+
+    } catch (error) {
+      console.error("Error durante la generación del documento:", error);
+      alert("No se pudo generar el documento. Revisa la consola (F12) para más detalles. El error más común es que la plantilla no se encuentre en 'assets/templates/_EE.docx' o esté corrupta.");
+    }
   }
 
   generateAllDocs(): void {

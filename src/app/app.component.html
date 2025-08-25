@@ -6,9 +6,9 @@
     </div>
     <div>
       <button class="btn btn-info me-2" (click)="currentView === 'table' ? showChartsView() : showTableView()">
-        <i class="fas fa-chart-pie"></i> {{ currentView === 'table' ? 'Dimensionamiento' : 'Ver Tabla' }}
+        <i class="fas fa-chart-pie"></i> {{ currentView === 'table' ? 'Dimensionamiento' : 'Ver CEE' }}
       </button>
-      <button class="btn btn-success me-2" (click)="generateAllDocs()" title="Generar un documento de Word para cada exp. edu.">
+      <button class="btn btn-success me-2" (click)="generateAllDocs()" title="Generar un documento de Word para cada Experiencia educativa.">
         <i class="fas fa-file-word"></i> Generar Docs
       </button>
       <button class="btn btn-secondary me-2" (click)="exportToPdf()">Exportar a PDF</button>
