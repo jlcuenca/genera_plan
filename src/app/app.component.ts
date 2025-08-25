@@ -1,9 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, KeyValue } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-// Se añaden Router y NavigationEnd para escuchar los eventos de navegación
 import { ActivatedRoute, RouterOutlet, Router, NavigationEnd } from '@angular/router';
-import { filter } from 'rxjs/operators'; // Se añade el operador filter
+import { filter } from 'rxjs/operators';
 import { CurriculumService } from './curriculum.service';
 import {
   AreaFormacion, Materia, SubArea, PlanDeEstudios, CaracterMateria, OportunidadEvaluacion,
@@ -15,6 +14,14 @@ import { saveAs } from 'file-saver';
 
 declare var Chart: any;
 declare var jsPDF: any;
+
+// Función para generar un UUID simple y único para la sesión del navegador.
+function generateUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
 
 @Component({
   selector: 'app-root',
@@ -53,13 +60,10 @@ export class AppComponent implements OnInit {
   constructor(
     private curriculumService: CurriculumService,
     private route: ActivatedRoute,
-    private router: Router // Se inyecta el Router principal
+    private router: Router
   ) {}
 
   ngOnInit(): void {
-    // CORRECCIÓN: Se escucha a los eventos del router para obtener el ID del plan.
-    // Esto soluciona el problema de que el componente se cargue antes de que
-    // los parámetros de la ruta estén disponibles.
     this.router.events.pipe(
       filter((event): event is NavigationEnd => event instanceof NavigationEnd)
     ).subscribe(() => {
@@ -71,7 +75,6 @@ export class AppComponent implements OnInit {
       const id = currentRoute.snapshot.paramMap.get('planId');
 
       if (id) {
-        // Se comprueba si el ID ha cambiado para no recargar datos innecesariamente
         if (this.planId !== id) {
           this.planId = id;
           this.loadData();
@@ -87,7 +90,17 @@ export class AppComponent implements OnInit {
     if (!this.planId) return;
     this.isLoading = true;
     this.curriculumService.getPlanDeEstudios(this.planId).subscribe({
-      next: (data) => { this.planDeEstudios = data; this.isLoading = false; },
+      next: (data) => {
+        // Asegurarse de que cada materia tenga un _id para compatibilidad hacia atrás
+        data.areas.forEach(area => {
+            area.materias?.forEach(m => { if (!m._id) m._id = generateUUID(); });
+            area.subAreas?.forEach(sa => {
+                sa.materias?.forEach(m => { if (!m._id) m._id = generateUUID(); });
+            });
+        });
+        this.planDeEstudios = data;
+        this.isLoading = false;
+      },
       error: (err: any) => {
         if (err.status === 404) {
           console.log(`El plan '${this.planId}' no existe. Creando una plantilla nueva.`);
@@ -254,6 +267,7 @@ export class AppComponent implements OnInit {
   openNewModal(area: AreaFormacion, subArea?: SubArea): void {
     this.isNewMateria = true;
     this.editingMateria = {
+        _id: generateUUID(), // Generar ID único para la nueva materia
         clave: '', nombre: '', seriacion: null, acd: '', caracter: CaracterMateria.Obligatoria,
         ht: 0, hp: 0, ho: 0, cr: 0, oe: OportunidadEvaluacion.Ordinario, rd: RelacionDisciplinar.Interdisciplinario,
         ma: ModalidadAprendizaje.Curso, e: Espacio.Intraprograma, ca: CaracterMateria.Obligatoria,
@@ -288,14 +302,16 @@ export class AppComponent implements OnInit {
     } else {
       let found = false;
       for (const area of this.planDeEstudios.areas) {
-        const materiaIndex = area.materias.findIndex(m => m.clave === this.editingMateria!.clave);
+        // Buscar por _id en lugar de clave
+        const materiaIndex = area.materias.findIndex(m => m._id === this.editingMateria!._id);
         if (materiaIndex !== -1) {
           area.materias[materiaIndex] = { ...area.materias[materiaIndex], ...this.editingMateria };
           found = true; break;
         }
         if (area.subAreas) {
           for (const subArea of area.subAreas) {
-            const subMateriaIndex = subArea.materias.findIndex(m => m.clave === this.editingMateria!.clave);
+            // Buscar por _id en lugar de clave
+            const subMateriaIndex = subArea.materias.findIndex(m => m._id === this.editingMateria!._id);
             if (subMateriaIndex !== -1) {
               subArea.materias[subMateriaIndex] = { ...subArea.materias[subMateriaIndex], ...this.editingMateria };
               found = true; break;
@@ -314,14 +330,16 @@ export class AppComponent implements OnInit {
     if (confirm(`¿Estás seguro de que quieres eliminar la materia "${materiaToDelete.nombre}"?`)) {
         let found = false;
         for (const area of this.planDeEstudios.areas) {
-            let materiaIndex = area.materias.findIndex(m => m.clave === materiaToDelete.clave);
+            // Buscar por _id en lugar de clave
+            let materiaIndex = area.materias.findIndex(m => m._id === materiaToDelete._id);
             if (materiaIndex !== -1) {
                 area.materias.splice(materiaIndex, 1);
                 found = true; break;
             }
             if (area.subAreas) {
                 for (const subArea of area.subAreas) {
-                    let subMateriaIndex = subArea.materias.findIndex(m => m.clave === materiaToDelete.clave);
+                     // Buscar por _id en lugar de clave
+                    let subMateriaIndex = subArea.materias.findIndex(m => m._id === materiaToDelete._id);
                     if (subMateriaIndex !== -1) {
                         subArea.materias.splice(subMateriaIndex, 1);
                         found = true; break;
@@ -338,9 +356,14 @@ export class AppComponent implements OnInit {
 
   duplicateMateria(materiaToDuplicate: Materia, area: AreaFormacion, subArea?: SubArea): void {
     if (!this.planDeEstudios) return;
-    const newKey = `${materiaToDuplicate.clave}_copia_${Date.now()}`;
-    if (confirm(`¿Duplicar la materia "${materiaToDuplicate.nombre}"?\nLa nueva clave será: ${newKey}`)) {
-        const newMateria: Materia = { ...materiaToDuplicate, clave: newKey, nombre: `${materiaToDuplicate.nombre} (Copia)` };
+    const newKey = `${materiaToDuplicate.clave}_copia`;
+    if (confirm(`¿Duplicar la materia "${materiaToDuplicate.nombre}"?\nEl nuevo código será: ${newKey}`)) {
+        const newMateria: Materia = {
+           ...materiaToDuplicate,
+            _id: generateUUID(), // Generar un nuevo ID único para la copia
+            clave: newKey,
+            nombre: `${materiaToDuplicate.nombre} (Copia)`
+        };
         const targetArea = this.planDeEstudios.areas.find(a => a.nombre === area.nombre);
         if (targetArea) {
             if (subArea) {
@@ -363,7 +386,7 @@ export class AppComponent implements OnInit {
       const ht = this.editingMateria.ht || 0;
       const hp = this.editingMateria.hp || 0;
       const ho = this.editingMateria.ho || 0;
-      this.editingMateria.cr = (ht * 2) + hp + Math.floor(ho / 30);
+      this.editingMateria.cr = Math.round((ht * 1) + (hp * 1)); // Ajustar cálculo si es necesario
     }
   }
   
@@ -398,15 +421,15 @@ export class AppComponent implements OnInit {
     addLine("Total de Créditos del Plan de estudios:", this.planDeEstudios.totalCreditosPlan);
     addLine("Total de créditos para obtener el grado:", this.planDeEstudios.totalCreditosGrado);
     addLine("Última Elaboración:", this.planDeEstudios.fechaElaboracion);
-    const head = [['ACD', 'Experiencia Educativa', 'R', 'Oe', 'Rd', 'Ma', 'E', 'Ca', 'HT', 'HP', 'HO', 'CR', 'AF', 'AA']];
+    const head = [['ACD', 'Clave', 'Experiencia Educativa', 'R', 'Oe', 'Rd', 'Ma', 'E', 'Ca', 'HT', 'HP', 'HO', 'CR', 'AF', 'AA']];
     const body: any[] = [];
     let grandTotalHT = 0, grandTotalHP = 0, grandTotalHO = 0, grandTotalCR = 0;
     this.planDeEstudios.areas.forEach(area => {
-        body.push([{ content: area.nombre, colSpan: 14, styles: { fontStyle: 'bold', fillColor: this.getAreaPdfColor(area.nombre) } }]);
-        area.materias.forEach(m => body.push([m.acd, m.nombre, m.seriacion || '-', m.oe || '-', m.rd || '-', m.ma || '-', m.e || '-', m.ca || '-', m.ht, m.hp, m.ho, m.cr, m.af || '-', m.aa || '-']));
+        body.push([{ content: area.nombre, colSpan: 15, styles: { fontStyle: 'bold', fillColor: this.getAreaPdfColor(area.nombre) } }]);
+        area.materias.forEach(m => body.push([m.acd, m.clave, m.nombre, m.seriacion || '-', m.oe || '-', m.rd || '-', m.ma || '-', m.e || '-', m.ca || '-', m.ht, m.hp, m.ho, m.cr, m.af || '-', m.aa || '-']));
         area.subAreas?.forEach(sa => {
-             body.push([{ content: sa.nombre, colSpan: 14, styles: { fontStyle: 'italic', fillColor: '#f0f0f0' } }]);
-             sa.materias.forEach(m => body.push([m.acd, m.nombre, m.seriacion || '-', m.oe || '-', m.rd || '-', m.ma || '-', m.e || '-', m.ca || '-', m.ht, m.hp, m.ho, m.cr, m.af || '-', m.aa || '-']));
+             body.push([{ content: sa.nombre, colSpan: 15, styles: { fontStyle: 'italic', fillColor: '#f0f0f0' } }]);
+             sa.materias.forEach(m => body.push([m.acd, m.clave, m.nombre, m.seriacion || '-', m.oe || '-', m.rd || '-', m.ma || '-', m.e || '-', m.ca || '-', m.ht, m.hp, m.ho, m.cr, m.af || '-', m.aa || '-']));
         });
         const subTotalHT = this.calculateTotal(area, 'ht');
         const subTotalHP = this.calculateTotal(area, 'hp');
@@ -416,9 +439,9 @@ export class AppComponent implements OnInit {
         grandTotalHP += subTotalHP;
         grandTotalHO += subTotalHO;
         grandTotalCR += subTotalCR;
-        body.push([{ content: `Subtotal ${area.nombre}`, colSpan: 8, styles: { halign: 'right', fontStyle: 'bold' } }, subTotalHT, subTotalHP, subTotalHO, subTotalCR, '', '']);
+        body.push([{ content: `Subtotal ${area.nombre}`, colSpan: 9, styles: { halign: 'right', fontStyle: 'bold' } }, subTotalHT, subTotalHP, subTotalHO, subTotalCR, '', '']);
     });
-    body.push([{ content: 'Gran Total', colSpan: 8, styles: { halign: 'right', fontStyle: 'bold', fillColor: '#383838', textColor: '#ffffff' } }, grandTotalHT, grandTotalHP, grandTotalHO, grandTotalCR, '', '']);
+    body.push([{ content: 'Gran Total', colSpan: 9, styles: { halign: 'right', fontStyle: 'bold', fillColor: '#383838', textColor: '#ffffff' } }, grandTotalHT, grandTotalHP, grandTotalHO, grandTotalCR, '', '']);
     (doc as any).autoTable({
         head: head,
         body: body,
@@ -426,7 +449,7 @@ export class AppComponent implements OnInit {
         theme: 'grid',
         headStyles: { fillColor: [56, 56, 56] },
         styles: { fontSize: 5, cellPadding: 1 },
-        columnStyles: { 1: { cellWidth: 40 }, },
+        columnStyles: { 2: { cellWidth: 40 }, },
         didDrawPage: (data: any) => {
             if (data.pageNumber > 1) {
                 (doc as any).autoTable({
@@ -435,7 +458,7 @@ export class AppComponent implements OnInit {
                     theme: 'grid',
                     headStyles: { fillColor: [56, 56, 56] },
                     styles: { fontSize: 5, cellPadding: 1 },
-                    columnStyles: { 1: { cellWidth: 40 }, }
+                    columnStyles: { 2: { cellWidth: 40 }, }
                 });
             }
             const now = new Date();

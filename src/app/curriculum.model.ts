@@ -88,6 +88,7 @@ export interface PlanDeEstudios {
 }
 
 export interface Materia {
+  _id?: string;
   clave: string;
   nombre:string;
   seriacion: string | null;
