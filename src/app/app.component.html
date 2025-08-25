@@ -57,9 +57,8 @@
       <thead class="table-dark sticky-top">
         <tr>
           <th style="width: 10%;" [title]="headerDefinitions.ACD">ACD</th>
-          <th style="width: 8%;">Clave</th>
+          <th style="width: 13%;" [title]="headerDefinitions.R">R</th>
           <th style="width: 20%;">Experiencias Educativas</th>
-          <th style="width: 5%;" [title]="headerDefinitions.R">R</th>
           <th class="text-center" [title]="headerDefinitions.Oe">Oe</th>
           <th class="text-center" [title]="headerDefinitions.Rd">Rd</th>
           <th class="text-center" [title]="headerDefinitions.Ma">Ma</th>
@@ -88,9 +87,8 @@
           
           <tr *ngFor="let materia of area.materias">
               <td class="no-wrap">{{ materia.acd }}</td>
-              <td>{{ materia.clave }}</td>
-              <td>{{ materia.nombre }}</td>
               <td>{{ materia.seriacion || '-' }}</td>
+              <td>{{ materia.nombre }}</td>
               <td>{{ materia.oe }}</td>
               <td>{{ materia.rd }}</td>
               <td>{{ materia.ma }}</td>
@@ -124,9 +122,8 @@
             </tr>
             <tr *ngFor="let materia of subArea.materias">
               <td class="no-wrap">{{ materia.acd }}</td>
-              <td>{{ materia.clave }}</td>
-              <td>{{ materia.nombre }}</td>
               <td>{{ materia.seriacion || '-' }}</td>
+              <td>{{ materia.nombre }}</td>
               <td>{{ materia.oe }}</td>
               <td>{{ materia.rd }}</td>
               <td>{{ materia.ma }}</td>
@@ -162,9 +159,8 @@
           <ng-container *ngIf="area.nombre.includes('Básica General')">
             <tr class="table-dark">
               <th style="width: 10%;" [title]="headerDefinitions.ACD">ACD</th>
-              <th style="width: 8%;">Clave</th>
+              <th style="width: 13%;" [title]="headerDefinitions.R">R</th>
               <th style="width: 20%;">Experiencias Educativas</th>
-              <th style="width: 5%;" [title]="headerDefinitions.R">R</th>
               <th class="text-center" [title]="headerDefinitions.Oe">Oe</th>
               <th class="text-center" [title]="headerDefinitions.Rd">Rd</th>
               <th class="text-center" [title]="headerDefinitions.Ma">Ma</th>
@@ -209,10 +205,6 @@
       <div class="modal-body">
         <form #materiaForm="ngForm" (ngSubmit)="saveMateria()">
           <div class="row">
-            <div class="col-md-3 mb-3">
-              <label for="clave" class="form-label">Clave</label>
-              <input type="text" class="form-control" id="clave" name="clave" [(ngModel)]="editingMateria.clave" required [disabled]="!isNewMateria">
-            </div>
             <div class="col-md-9 mb-3">
               <label for="nombre" class="form-label">Nombre</label>
               <input type="text" class="form-control" id="nombre" name="nombre" [(ngModel)]="editingMateria.nombre" required>
