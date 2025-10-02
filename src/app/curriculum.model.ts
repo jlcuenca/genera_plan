@@ -157,7 +157,6 @@ export interface Formalizacion {
   fechaElaboracion: string;
   fechaModificacion: string;
   cuerpoColegiado: string;
-  materias: Materia[];
 }
 
 /**

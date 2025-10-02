@@ -312,6 +312,87 @@
             <label for="saberesAxiologicos" class="form-label">Saberes Axiológicos</label>
             <textarea class="form-control" id="saberesAxiologicos" name="saberesAxiologicos" rows="3" [(ngModel)]="editingMateria.saberesAxiologicos"></textarea>
           </div>
+          <hr>
+          <h6 class="text-muted">Formalización y Académicos</h6>
+
+          <div class="mb-3">
+            <label for="estrategiasGenerales" class="form-label">20. Estrategias de enseñanza aprendizaje</label>
+            <textarea class="form-control" id="estrategiasGenerales" name="estrategiasGenerales" rows="3" [(ngModel)]="editingMateria.estrategiasGenerales"></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label for="apoyosEducativos" class="form-label">21. Apoyos educativos</label>
+            <textarea class="form-control" id="apoyosEducativos" name="apoyosEducativos" rows="3" [(ngModel)]="editingMateria.apoyosEducativos"></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">22. Evidencias de desempeño y esquema de evaluación</label>
+            <table class="table table-sm table-bordered">
+              <thead>
+                <tr>
+                  <th>Evidencia (Producto)</th>
+                  <th>Indicadores</th>
+                  <th>Procedimiento</th>
+                  <th style="width: 80px;">%</th>
+                  <th style="width: 50px;"></th>
+                </tr>
+              </thead>
+              <tbody *ngIf="editingMateria.evaluacionProductos">
+                <tr *ngFor="let producto of editingMateria.evaluacionProductos; let i = index">
+                  <td><input type="text" class="form-control form-control-sm" [(ngModel)]="producto.evidencia" [name]="'evidencia' + i"></td>
+                  <td><input type="text" class="form-control form-control-sm" [(ngModel)]="producto.indicadores" [name]="'indicadores' + i"></td>
+                  <td><input type="text" class="form-control form-control-sm" [(ngModel)]="producto.procedimiento" [name]="'procedimiento' + i"></td>
+                  <td><input type="number" class="form-control form-control-sm" [(ngModel)]="producto.porcentaje" [name]="'porcentaje' + i"></td>
+                  <td><button type="button" (click)="removeProducto(i)" class="btn btn-sm btn-outline-danger">X</button></td>
+                </tr>
+              </tbody>
+            </table>
+            <button type="button" (click)="addProducto()" class="btn btn-sm btn-outline-secondary">Añadir Producto</button>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">23. Acreditación</label>
+            <div class="input-group mb-2">
+              <span class="input-group-text" style="width: 120px;">Ordinario</span>
+              <input type="text" class="form-control" id="acreditacionOrdinario" [(ngModel)]="editingMateria.acreditacion!.ordinario" name="acreditacionOrdinario">
+            </div>
+            <div class="input-group mb-2">
+              <span class="input-group-text" style="width: 120px;">Extraordinario</span>
+              <input type="text" class="form-control" id="acreditacionExtraordinario" [(ngModel)]="editingMateria.acreditacion!.extraordinario" name="acreditacionExtraordinario">
+            </div>
+            <div class="input-group">
+              <span class="input-group-text" style="width: 120px;">Suficiencia</span>
+              <input type="text" class="form-control" id="acreditacionSuficiencia" [(ngModel)]="editingMateria.acreditacion!.suficiencia" name="acreditacionSuficiencia">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="perfilDocente" class="form-label">24. Perfil del Docente</label>
+            <textarea class="form-control" id="perfilDocente" name="perfilDocente" rows="3" [(ngModel)]="editingMateria.perfilDocente"></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">25. Fuentes de Información</label>
+            <div *ngIf="editingMateria.fuentesInformacion" class="d-grid gap-2">
+              <div *ngFor="let fuente of editingMateria.fuentesInformacion; let i = index" class="input-group">
+                <input type="text" class="form-control form-control-sm" [(ngModel)]="editingMateria.fuentesInformacion[i]" [name]="'fuente' + i">
+                <button type="button" (click)="removeFuente(i)" class="btn btn-sm btn-outline-danger">X</button>
+              </div>
+            </div>
+            <button type="button" (click)="addFuente()" class="btn btn-sm btn-outline-secondary mt-2">Añadir Fuente</button>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">27. Académicos que Elaboraron</label>
+            <div *ngIf="editingMateria.academicosElaboraron" class="d-grid gap-2">
+              <div *ngFor="let academico of editingMateria.academicosElaboraron; let i = index" class="input-group">
+                <input type="text" class="form-control form-control-sm" [(ngModel)]="editingMateria.academicosElaboraron[i]" [name]="'academico' + i">
+                <button type="button" (click)="removeAcademico(i)" class="btn btn-sm btn-outline-danger">X</button>
+              </div>
+            </div>
+            <button type="button" (click)="addAcademico()" class="btn btn-sm btn-outline-secondary mt-2">Añadir Académico</button>
+          </div>
+
            <div class="modal-footer">
               <button type="button" class="btn btn-secondary" (click)="closeMateriaModal()">Cancelar</button>
               <button type="submit" class="btn btn-primary" [disabled]="!materiaForm.form.valid">Guardar</button>

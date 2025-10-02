@@ -287,7 +287,7 @@ export class AppComponent implements OnInit {
         evaluacionProductos: [{ evidencia: 'Examen Parcial', indicadores: 'Comprensión de temas', procedimiento: 'Prueba escrita', porcentaje: 30 }],
         acreditacion: { ordinario: 'Calificación final >= 6', extraordinario: 'Examen final', suficiencia: 'Examen de suficiencia' },
         perfilDocente: 'Licenciatura en el área, preferiblemente con posgrado...',
-        fuentesInformacion: ['Libro de Texto Principal, 2024', 'Artículo de Referencia, 2023'],
+        fuentesInformacion: ['Libro de Texto Principal, 2024', 'Artículo de Referencia, 2023'], // Ejemplo de fuentes de información
         formalizacion: { fechaElaboracion: new Date().toISOString().split('T')[0], fechaModificacion: new Date().toISOString().split('T')[0], cuerpoColegiado: 'Academia de Métodos Cuantitativos' },
         academicosElaboraron: ['Dr. Juan Pérez', 'Mtra. Ana García']
     };
