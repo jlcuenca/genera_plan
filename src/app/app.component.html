@@ -85,7 +85,7 @@
             </td>
           </tr>
           
-          <tr *ngFor="let materia of area.materias">
+          <tr *ngFor="let materia of area.materias; let i = index">
               <td class="no-wrap">{{ materia.acd }}</td>
               <td>{{ materia.seriacion || '-' }}</td>
               <td>{{ materia.nombre }}</td>
@@ -107,6 +107,18 @@
                   <button class="btn btn-outline-secondary" (click)="duplicateMateria(materia, area)" title="Duplicar">D</button>
                   <button class="btn btn-outline-info" (click)="openEditModal(materia, area)" title="Editar">E</button>
                   <button class="btn btn-outline-danger" (click)="deleteMateria(materia)" title="Eliminar">X</button>
+                  <button class="btn btn-outline-dark" 
+                          (click)="moveMateria(i, area.materias, 'up')" 
+                          [disabled]="i === 0" 
+                          title="Subir">
+                    <i class="fas fa-arrow-up"></i>
+                  </button>
+                  <button class="btn btn-outline-dark" 
+                          (click)="moveMateria(i, area.materias, 'down')" 
+                          [disabled]="i === area.materias.length - 1" 
+                          title="Bajar">
+                    <i class="fas fa-arrow-down"></i>
+                  </button>
                 </div>
               </td>
           </tr>
@@ -120,7 +132,7 @@
                  <button class="btn btn-sm btn-outline-secondary" (click)="openNewModal(area, subArea)" title="Agregar exp. edu. en {{subArea.nombre}}">+</button>
               </td>
             </tr>
-            <tr *ngFor="let materia of subArea.materias">
+            <tr *ngFor="let materia of subArea.materias; let i = index">
               <td class="no-wrap">{{ materia.acd }}</td>
               <td>{{ materia.seriacion || '-' }}</td>
               <td>{{ materia.nombre }}</td>
@@ -142,6 +154,18 @@
                   <button class="btn btn-outline-secondary" (click)="duplicateMateria(materia, area, subArea)" title="Duplicar">D</button>
                   <button class="btn btn-outline-info" (click)="openEditModal(materia, area, subArea)" title="Editar">E</button>
                   <button class="btn btn-outline-danger" (click)="deleteMateria(materia)" title="Eliminar">X</button>
+                  <button class="btn btn-outline-dark" 
+                          (click)="moveMateria(i, subArea.materias, 'up')" 
+                          [disabled]="i === 0" 
+                          title="Subir">
+                    <i class="fas fa-arrow-up"></i>
+                  </button>
+                  <button class="btn btn-outline-dark" 
+                          (click)="moveMateria(i, subArea.materias, 'down')" 
+                          [disabled]="i === subArea.materias.length - 1" 
+                          title="Bajar">
+                    <i class="fas fa-arrow-down"></i>
+                  </button>
                 </div>
               </td>
             </tr>

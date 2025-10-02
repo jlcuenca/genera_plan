@@ -417,6 +417,24 @@ export class AppComponent implements OnInit {
     }
   }
 
+  moveMateria(currentIndex: number, materias: Materia[], direction: 'up' | 'down'): void {
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+
+    // Validar que el movimiento es posible
+    if (targetIndex < 0 || targetIndex >= materias.length) {
+      return; // No se puede mover más allá de los límites del arreglo
+    }
+
+    // Extraer el elemento que se va a mover
+    const [movedMateria] = materias.splice(currentIndex, 1);
+    
+    // Insertar el elemento en la nueva posición
+    materias.splice(targetIndex, 0, movedMateria);
+
+    // Guardar el nuevo orden
+    this.saveChanges();
+  }
+
   calculateCredits(): void {
     if (this.editingMateria) {
       const ht = this.editingMateria.ht || 0;
