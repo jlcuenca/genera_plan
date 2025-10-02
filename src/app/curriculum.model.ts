@@ -113,6 +113,29 @@ export interface Materia {
   saberesHeuristicos?: string;
   saberesTeoricos?: string;
   saberesAxiologicos?: string;
+
+  // Campos del 20 al 27 (Formalización y académicos)
+  estrategiasGenerales?: string;
+  apoyosEducativos?: string;
+  evaluacionProductos?: EvaluacionProducto[];
+  acreditacion?: Acreditacion;
+  perfilDocente?: string;
+  fuentesInformacion?: string[];
+  formalizacion?: Formalizacion;
+  academicosElaboraron?: string[];
+}
+
+export interface EvaluacionProducto {
+  evidencia: string;
+  indicadores: string;
+  procedimiento: string;
+  porcentaje: number;
+}
+
+export interface Acreditacion {
+  ordinario: string;
+  extraordinario: string;
+  suficiencia: string;
 }
 
 export interface AreaFormacion {
@@ -127,6 +150,13 @@ export interface AreaFormacion {
 
 export interface SubArea {
   nombre: string;
+  materias: Materia[];
+}
+
+export interface Formalizacion {
+  fechaElaboracion: string;
+  fechaModificacion: string;
+  cuerpoColegiado: string;
   materias: Materia[];
 }
 

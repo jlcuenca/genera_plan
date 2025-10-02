@@ -3,7 +3,7 @@ import { CommonModule, KeyValue } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { filter, firstValueFrom } from 'rxjs';
-import { CurriculumService } from './curriculum.service';
+import { CurriculumService, } from './curriculum.service';
 import {
   AreaFormacion, Materia, SubArea, PlanDeEstudios, CaracterMateria, OportunidadEvaluacion,
   RelacionDisciplinar, ModalidadAprendizaje, Espacio, AreaFormacionEnum, AmbienteAprendizaje, EstatusMateria,
@@ -276,7 +276,20 @@ export class AppComponent implements OnInit {
         ma: ModalidadAprendizaje.Curso, e: Espacio.Intraprograma, ca: CaracterMateria.Obligatoria,
         af: area.nombre.includes('Básica') ? AreaFormacionEnum.Basica : AreaFormacionEnum.Disciplinar,
         aa: AmbienteAprendizaje.Presencial, estatus: EstatusMateria.Pendiente,
-        justificacion: '', unidadCompetencia: '', saberesHeuristicos: '', saberesTeoricos: '', saberesAxiologicos: ''
+        justificacion: 'Ejemplo de justificación...',
+        unidadCompetencia: 'Ejemplo de unidad de competencia...',
+        saberesHeuristicos: 'Ejemplo de saberes heurísticos...',
+        saberesTeoricos: 'Ejemplo de saberes teóricos...',
+        saberesAxiologicos: 'Ejemplo de saberes axiológicos...',
+        // Nuevos campos con valores de ejemplo
+        estrategiasGenerales: 'Ejemplo de estrategias generales de enseñanza-aprendizaje...',
+        apoyosEducativos: 'Proyector, software especializado, etc.',
+        evaluacionProductos: [{ evidencia: 'Examen Parcial', indicadores: 'Comprensión de temas', procedimiento: 'Prueba escrita', porcentaje: 30 }],
+        acreditacion: { ordinario: 'Calificación final >= 6', extraordinario: 'Examen final', suficiencia: 'Examen de suficiencia' },
+        perfilDocente: 'Licenciatura en el área, preferiblemente con posgrado...',
+        fuentesInformacion: ['Libro de Texto Principal, 2024', 'Artículo de Referencia, 2023'],
+        formalizacion: { fechaElaboracion: new Date().toISOString().split('T')[0], fechaModificacion: new Date().toISOString().split('T')[0], cuerpoColegiado: 'Academia de Métodos Cuantitativos' },
+        academicosElaboraron: ['Dr. Juan Pérez', 'Mtra. Ana García']
     };
     this.calculateCredits();
     this.currentContext = { area, subArea };
@@ -284,6 +297,30 @@ export class AppComponent implements OnInit {
   }
 
   closeMateriaModal(): void { this.isMateriaModalOpen = false; this.editingMateria = null; this.currentContext = null; }
+
+  // Métodos para manejar arreglos en el modal
+  addProducto(): void {
+    if (this.editingMateria && this.editingMateria.evaluacionProductos) {
+      this.editingMateria.evaluacionProductos.push({ evidencia: '', indicadores: '', procedimiento: '', porcentaje: 0 });
+    }
+  }
+  removeProducto(index: number): void {
+    this.editingMateria?.evaluacionProductos?.splice(index, 1);
+  }
+
+  addFuente(): void {
+    this.editingMateria?.fuentesInformacion?.push('');
+  }
+  removeFuente(index: number): void {
+    this.editingMateria?.fuentesInformacion?.splice(index, 1);
+  }
+
+  addAcademico(): void {
+    this.editingMateria?.academicosElaboraron?.push('');
+  }
+  removeAcademico(index: number): void {
+    this.editingMateria?.academicosElaboraron?.splice(index, 1);
+  }
 
   saveMateria(): void {
     if (!this.editingMateria || !this.currentContext || !this.planDeEstudios) return;
@@ -536,7 +573,7 @@ export class AppComponent implements OnInit {
   }
 
   generateAllDocs(): void {
-    if (confirm("Se generará un archivo .docx para cada materia en el plan de estudios. ¿Deseas continuar?")) {
+    if (confirm("Se generará un archivo .docx para cada experiencia educativa del plan de estudios. ¿Deseas continuar?")) {
         this.planDeEstudios?.areas.forEach(area => {
             area.materias?.forEach(materia => this.generateDocForMateria(materia));
             area.subAreas?.forEach(subArea => {
