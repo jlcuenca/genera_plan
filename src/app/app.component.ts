@@ -20,7 +20,7 @@ declare var jsPDF: any;
 
 // Función para generar un UUID simple y único para la sesión del navegador.
 function generateUUID(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
@@ -65,9 +65,15 @@ export class AppComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private http: HttpClient // Inyectar HttpClient
-  ) {}
+  ) { }
 
   ngOnInit(): void {
+    // Asegurar carga de opciones
+    this.optionsOe = Object.values(OportunidadEvaluacion);
+    if (!this.optionsOe || this.optionsOe.length === 0) {
+      this.optionsOe = [OportunidadEvaluacion.Ordinario, OportunidadEvaluacion.Todas];
+    }
+
     this.router.events.pipe(
       filter((event): event is NavigationEnd => event instanceof NavigationEnd)
     ).subscribe(() => {
@@ -96,10 +102,10 @@ export class AppComponent implements OnInit {
     this.curriculumService.getPlanDeEstudios(this.planId).subscribe({
       next: (data) => {
         data.areas.forEach(area => {
-            area.materias?.forEach(m => { if (!m._id) m._id = generateUUID(); });
-            area.subAreas?.forEach(sa => {
-                sa.materias?.forEach(m => { if (!m._id) m._id = generateUUID(); });
-            });
+          area.materias?.forEach(m => { if (!m._id) m._id = generateUUID(); });
+          area.subAreas?.forEach(sa => {
+            sa.materias?.forEach(m => { if (!m._id) m._id = generateUUID(); });
+          });
         });
         this.planDeEstudios = data;
         this.isLoading = false;
@@ -118,11 +124,11 @@ export class AppComponent implements OnInit {
 
   saveChanges(): void {
     if (this.planDeEstudios && this.planId) {
-        this.updatePlanDate();
-        this.curriculumService.saveFullCurriculum(this.planId, this.planDeEstudios).subscribe({
-          next: (response) => { console.log(`Guardado con éxito: ${response.message}`); },
-          error: (err: any) => { console.error('Error al guardar los datos.', err); }
-        });
+      this.updatePlanDate();
+      this.curriculumService.saveFullCurriculum(this.planId, this.planDeEstudios).subscribe({
+        next: (response) => { console.log(`Guardado con éxito: ${response.message}`); },
+        error: (err: any) => { console.error('Error al guardar los datos.', err); }
+      });
     }
   }
 
@@ -131,36 +137,36 @@ export class AppComponent implements OnInit {
   async showChartsView(): Promise<void> {
     this.currentView = 'charts';
     try {
-        await this.loadChartJsScript();
-        setTimeout(() => this.createCharts(), 0);
+      await this.loadChartJsScript();
+      setTimeout(() => this.createCharts(), 0);
     } catch (error) { console.error('Fallo al cargar el script de Chart.js', error); }
   }
 
   private loadChartJsScript(): Promise<void> {
     if (this.chartJsScriptLoaded) { return Promise.resolve(); }
     return new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
-        script.onload = () => { this.chartJsScriptLoaded = true; resolve(); };
-        script.onerror = (error) => reject(error);
-        document.body.appendChild(script);
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+      script.onload = () => { this.chartJsScriptLoaded = true; resolve(); };
+      script.onerror = (error) => reject(error);
+      document.body.appendChild(script);
     });
   }
-  
+
   private loadJsPdfScript(): Promise<void> {
     if (this.jspdfScriptLoaded) { return Promise.resolve(); }
     return new Promise((resolve, reject) => {
-        const jspdfScript = document.createElement('script');
-        jspdfScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-        jspdfScript.onload = () => {
-            const autoTableScript = document.createElement('script');
-            autoTableScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js';
-            autoTableScript.onload = () => { this.jspdfScriptLoaded = true; resolve(); };
-            autoTableScript.onerror = (error) => reject(error);
-            document.body.appendChild(autoTableScript);
-        };
-        jspdfScript.onerror = (error) => reject(error);
-        document.body.appendChild(jspdfScript);
+      const jspdfScript = document.createElement('script');
+      jspdfScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      jspdfScript.onload = () => {
+        const autoTableScript = document.createElement('script');
+        autoTableScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js';
+        autoTableScript.onload = () => { this.jspdfScriptLoaded = true; resolve(); };
+        autoTableScript.onerror = (error) => reject(error);
+        document.body.appendChild(autoTableScript);
+      };
+      jspdfScript.onerror = (error) => reject(error);
+      document.body.appendChild(jspdfScript);
     });
   }
 
@@ -191,20 +197,20 @@ export class AppComponent implements OnInit {
     const canvas = document.getElementById('hoursChart') as HTMLCanvasElement;
     if (!canvas) return;
     this.hoursChart = new Chart(canvas, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [
-                { label: 'Horas Teóricas (HT)', data: htData, backgroundColor: 'rgba(54, 162, 235, 0.7)' },
-                { label: 'Horas Prácticas (HP)', data: hpData, backgroundColor: 'rgba(255, 99, 132, 0.7)' },
-                { label: 'Otras Horas (HO)', data: hoData, backgroundColor: 'rgba(255, 206, 86, 0.7)' }
-            ]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { title: { display: true, text: 'Dimensionamiento de Horas por Área de Formación', font: { size: 16 } }, tooltip: { mode: 'index', intersect: false } },
-            scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
-        }
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          { label: 'Horas Teóricas (HT)', data: htData, backgroundColor: 'rgba(54, 162, 235, 0.7)' },
+          { label: 'Horas Prácticas (HP)', data: hpData, backgroundColor: 'rgba(255, 99, 132, 0.7)' },
+          { label: 'Otras Horas (HO)', data: hoData, backgroundColor: 'rgba(255, 206, 86, 0.7)' }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { title: { display: true, text: 'Dimensionamiento de Horas por Área de Formación', font: { size: 16 } }, tooltip: { mode: 'index', intersect: false } },
+        scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
+      }
     });
   }
 
@@ -212,18 +218,18 @@ export class AppComponent implements OnInit {
     const canvas = document.getElementById('creditsChart') as HTMLCanvasElement;
     if (!canvas) return;
     this.creditsChart = new Chart(canvas, {
-        type: 'doughnut',
-        data: {
-            labels: labels,
-            datasets: [{ label: 'Créditos', data: data, backgroundColor: colors, hoverOffset: 4 }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { title: { display: true, text: 'Dimensionamiento de Créditos por Área de Formación', font: { size: 16 } }, legend: { position: 'top' } }
-        }
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{ label: 'Créditos', data: data, backgroundColor: colors, hoverOffset: 4 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { title: { display: true, text: 'Dimensionamiento de Créditos por Área de Formación', font: { size: 16 } }, legend: { position: 'top' } }
+      }
     });
   }
-  
+
   getAreaClass(areaNombre: string): string {
     if (areaNombre.includes('Básica General')) return 'area-style-afbg';
     if (areaNombre.includes('Iniciación a la Disciplina')) return 'area-style-afbid';
@@ -238,31 +244,53 @@ export class AppComponent implements OnInit {
     const subAreaTotal = area.subAreas?.reduce((sum, sa) => sum + (sa.materias?.reduce((subSum, m) => subSum + (m[key] || 0), 0) || 0), 0) || 0;
     return directTotal + subAreaTotal;
   }
-  
+
   openPlanModal(): void { if (this.planDeEstudios) { this.editingPlan = { ...this.planDeEstudios }; this.isPlanModalOpen = true; } }
   closePlanModal(): void { this.isPlanModalOpen = false; this.editingPlan = null; }
 
   private updatePlanDate(): void {
-      if (this.planDeEstudios) {
-          const today = new Date();
-          const year = today.getFullYear();
-          const month = ('0' + (today.getMonth() + 1)).slice(-2);
-          const day = ('0' + today.getDate()).slice(-2);
-          this.planDeEstudios.fechaElaboracion = `${year}-${month}-${day}`;
-      }
+    if (this.planDeEstudios) {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = ('0' + (today.getMonth() + 1)).slice(-2);
+      const day = ('0' + today.getDate()).slice(-2);
+      this.planDeEstudios.fechaElaboracion = `${year}-${month}-${day}`;
+    }
   }
 
   savePlan(): void {
     if (this.editingPlan && this.planDeEstudios) {
-      Object.assign(this.planDeEstudios, this.editingPlan); 
+      Object.assign(this.planDeEstudios, this.editingPlan);
       this.closePlanModal();
       this.saveChanges();
     }
   }
-  
+
   openEditModal(materia: Materia, area: AreaFormacion, subArea?: SubArea): void {
     this.isNewMateria = false;
     this.editingMateria = { ...materia };
+
+    // Inicializar objetos anidados si faltan para evitar errores en la vista
+    if (!this.editingMateria.acreditacion) {
+      this.editingMateria.acreditacion = { ordinario: '', extraordinario: '', suficiencia: '' };
+    }
+    if (!this.editingMateria.formalizacion) {
+      this.editingMateria.formalizacion = {
+        fechaElaboracion: new Date().toISOString().split('T')[0],
+        fechaModificacion: new Date().toISOString().split('T')[0],
+        cuerpoColegiado: ''
+      };
+    }
+    if (!this.editingMateria.evaluacionProductos) {
+      this.editingMateria.evaluacionProductos = [];
+    }
+    if (!this.editingMateria.fuentesInformacion) {
+      this.editingMateria.fuentesInformacion = [];
+    }
+    if (!this.editingMateria.academicosElaboraron) {
+      this.editingMateria.academicosElaboraron = [];
+    }
+
     this.currentContext = { area, subArea };
     this.isMateriaModalOpen = true;
   }
@@ -270,26 +298,26 @@ export class AppComponent implements OnInit {
   openNewModal(area: AreaFormacion, subArea?: SubArea): void {
     this.isNewMateria = true;
     this.editingMateria = {
-        _id: generateUUID(), // Generar ID único para la nueva materia
-        clave: '', nombre: '', seriacion: null, acd: '', caracter: CaracterMateria.Obligatoria,
-        ht: 0, hp: 0, ho: 0, cr: 0, oe: OportunidadEvaluacion.Ordinario, rd: RelacionDisciplinar.Interdisciplinario,
-        ma: ModalidadAprendizaje.Curso, e: Espacio.Intraprograma, ca: CaracterMateria.Obligatoria,
-        af: area.nombre.includes('Básica') ? AreaFormacionEnum.Basica : AreaFormacionEnum.Disciplinar,
-        aa: AmbienteAprendizaje.Presencial, estatus: EstatusMateria.Pendiente,
-        justificacion: 'Ejemplo de justificación...',
-        unidadCompetencia: 'Ejemplo de unidad de competencia...',
-        saberesHeuristicos: 'Ejemplo de saberes heurísticos...',
-        saberesTeoricos: 'Ejemplo de saberes teóricos...',
-        saberesAxiologicos: 'Ejemplo de saberes axiológicos...',
-        // Nuevos campos con valores de ejemplo
-        estrategiasGenerales: 'Ejemplo de estrategias generales de enseñanza-aprendizaje...',
-        apoyosEducativos: 'Proyector, software especializado, etc.',
-        evaluacionProductos: [{ evidencia: 'Examen Parcial', indicadores: 'Comprensión de temas', procedimiento: 'Prueba escrita', porcentaje: 30 }],
-        acreditacion: { ordinario: 'Calificación final >= 6', extraordinario: 'Examen final', suficiencia: 'Examen de suficiencia' },
-        perfilDocente: 'Licenciatura en el área, preferiblemente con posgrado...',
-        fuentesInformacion: ['Libro de Texto Principal, 2024', 'Artículo de Referencia, 2023'], // Ejemplo de fuentes de información
-        formalizacion: { fechaElaboracion: new Date().toISOString().split('T')[0], fechaModificacion: new Date().toISOString().split('T')[0], cuerpoColegiado: 'Academia de Métodos Cuantitativos' },
-        academicosElaboraron: ['Dr. Juan Pérez', 'Mtra. Ana García']
+      _id: generateUUID(), // Generar ID único para la nueva materia
+      clave: '', nombre: '', seriacion: null, acd: '', caracter: CaracterMateria.Obligatoria,
+      ht: 0, hp: 0, ho: 0, cr: 0, oe: OportunidadEvaluacion.Ordinario, rd: RelacionDisciplinar.Interdisciplinario,
+      ma: ModalidadAprendizaje.Curso, e: Espacio.Intraprograma, ca: CaracterMateria.Obligatoria,
+      af: area.nombre.includes('Básica') ? AreaFormacionEnum.Basica : AreaFormacionEnum.Disciplinar,
+      aa: AmbienteAprendizaje.Presencial, estatus: EstatusMateria.Pendiente,
+      justificacion: 'Ejemplo de justificación...',
+      unidadCompetencia: 'Ejemplo de unidad de competencia...',
+      saberesHeuristicos: 'Ejemplo de saberes heurísticos...',
+      saberesTeoricos: 'Ejemplo de saberes teóricos...',
+      saberesAxiologicos: 'Ejemplo de saberes axiológicos...',
+      // Nuevos campos con valores de ejemplo
+      estrategiasGenerales: 'Ejemplo de estrategias generales de enseñanza-aprendizaje...',
+      apoyosEducativos: 'Proyector, software especializado, etc.',
+      evaluacionProductos: [{ evidencia: 'Examen Parcial', indicadores: 'Comprensión de temas', procedimiento: 'Prueba escrita', porcentaje: 30 }],
+      acreditacion: { ordinario: 'Calificación final >= 6', extraordinario: 'Examen final', suficiencia: 'Examen de suficiencia' },
+      perfilDocente: 'Licenciatura en el área, preferiblemente con posgrado...',
+      fuentesInformacion: ['Libro de Texto Principal, 2024', 'Artículo de Referencia, 2023'], // Ejemplo de fuentes de información
+      formalizacion: { fechaElaboracion: new Date().toISOString().split('T')[0], fechaModificacion: new Date().toISOString().split('T')[0], cuerpoColegiado: 'Academia de Métodos Cuantitativos' },
+      academicosElaboraron: ['Dr. Juan Pérez', 'Mtra. Ana García']
     };
     this.calculateCredits();
     this.currentContext = { area, subArea };
@@ -366,27 +394,27 @@ export class AppComponent implements OnInit {
   deleteMateria(materiaToDelete: Materia): void {
     if (!this.planDeEstudios) return;
     if (confirm(`¿Estás seguro de que quieres eliminar la materia "${materiaToDelete.nombre}"?`)) {
-        let found = false;
-        for (const area of this.planDeEstudios.areas) {
-            let materiaIndex = area.materias.findIndex(m => m._id === materiaToDelete._id);
-            if (materiaIndex !== -1) {
-                area.materias.splice(materiaIndex, 1);
-                found = true; break;
-            }
-            if (area.subAreas) {
-                for (const subArea of area.subAreas) {
-                    let subMateriaIndex = subArea.materias.findIndex(m => m._id === materiaToDelete._id);
-                    if (subMateriaIndex !== -1) {
-                        subArea.materias.splice(subMateriaIndex, 1);
-                        found = true; break;
-                    }
-                }
-            }
-            if (found) break;
+      let found = false;
+      for (const area of this.planDeEstudios.areas) {
+        let materiaIndex = area.materias.findIndex(m => m._id === materiaToDelete._id);
+        if (materiaIndex !== -1) {
+          area.materias.splice(materiaIndex, 1);
+          found = true; break;
         }
-        if (found) {
-            this.saveChanges();
+        if (area.subAreas) {
+          for (const subArea of area.subAreas) {
+            let subMateriaIndex = subArea.materias.findIndex(m => m._id === materiaToDelete._id);
+            if (subMateriaIndex !== -1) {
+              subArea.materias.splice(subMateriaIndex, 1);
+              found = true; break;
+            }
+          }
         }
+        if (found) break;
+      }
+      if (found) {
+        this.saveChanges();
+      }
     }
   }
 
@@ -394,26 +422,26 @@ export class AppComponent implements OnInit {
     if (!this.planDeEstudios) return;
     const newKey = `${materiaToDuplicate.clave}_copia`;
     if (confirm(`¿Duplicar la materia "${materiaToDuplicate.nombre}"?\nEl nuevo código será: ${newKey}`)) {
-        const newMateria: Materia = {
-           ...materiaToDuplicate,
-            _id: generateUUID(),
-            clave: newKey,
-            nombre: `${materiaToDuplicate.nombre} (Copia)`
-        };
-        const targetArea = this.planDeEstudios.areas.find(a => a.nombre === area.nombre);
-        if (targetArea) {
-            if (subArea) {
-                const targetSubArea = targetArea.subAreas?.find(sa => sa.nombre === subArea.nombre);
-                if (targetSubArea) {
-                    if (!targetSubArea.materias) targetSubArea.materias = [];
-                    targetSubArea.materias.push(newMateria);
-                }
-            } else {
-                if (!targetArea.materias) targetArea.materias = [];
-                targetArea.materias.push(newMateria);
-            }
-            this.saveChanges();
+      const newMateria: Materia = {
+        ...materiaToDuplicate,
+        _id: generateUUID(),
+        clave: newKey,
+        nombre: `${materiaToDuplicate.nombre} (Copia)`
+      };
+      const targetArea = this.planDeEstudios.areas.find(a => a.nombre === area.nombre);
+      if (targetArea) {
+        if (subArea) {
+          const targetSubArea = targetArea.subAreas?.find(sa => sa.nombre === subArea.nombre);
+          if (targetSubArea) {
+            if (!targetSubArea.materias) targetSubArea.materias = [];
+            targetSubArea.materias.push(newMateria);
+          }
+        } else {
+          if (!targetArea.materias) targetArea.materias = [];
+          targetArea.materias.push(newMateria);
         }
+        this.saveChanges();
+      }
     }
   }
 
@@ -427,7 +455,7 @@ export class AppComponent implements OnInit {
 
     // Extraer el elemento que se va a mover
     const [movedMateria] = materias.splice(currentIndex, 1);
-    
+
     // Insertar el elemento en la nueva posición
     materias.splice(targetIndex, 0, movedMateria);
 
@@ -443,8 +471,8 @@ export class AppComponent implements OnInit {
       this.editingMateria.cr = Math.round((ht * 1) + (hp * 1));
     }
   }
-  
-  originalOrder = (a: KeyValue<number,string>, b: KeyValue<number,string>): number => 0;
+
+  originalOrder = (a: KeyValue<number, string>, b: KeyValue<number, string>): number => 0;
 
   async exportToPdf(): Promise<void> {
     if (!this.planDeEstudios) return;
@@ -456,11 +484,11 @@ export class AppComponent implements OnInit {
     doc.setFontSize(5);
     let yPos = 35;
     const addLine = (label: string, value: string | number | undefined) => {
-        doc.setFont(undefined, 'bold');
-        doc.text(label, 14, yPos);
-        doc.setFont(undefined, 'normal');
-        doc.text(String(value || '-'), 70, yPos);
-        yPos += 4;
+      doc.setFont(undefined, 'bold');
+      doc.text(label, 14, yPos);
+      doc.setFont(undefined, 'normal');
+      doc.text(String(value || '-'), 70, yPos);
+      yPos += 4;
     };
     addLine("Opción Profesional:", this.planDeEstudios.opcionProfesional);
     addLine("Nivel de Estudios:", this.planDeEstudios.nivelEstudios);
@@ -475,52 +503,52 @@ export class AppComponent implements OnInit {
     addLine("Total de Créditos del Plan de estudios:", this.planDeEstudios.totalCreditosPlan);
     addLine("Total de créditos para obtener el grado:", this.planDeEstudios.totalCreditosGrado);
     addLine("Última Elaboración:", this.planDeEstudios.fechaElaboracion);
-    const head = [['ACD', 'Clave', 'Experiencia Educativa', 'R', 'Oe', 'Rd', 'Ma', 'E', 'Ca', 'HT', 'HP', 'HO', 'CR', 'AF', 'AA']];
+    const head = [['ACD', 'Experiencia Educativa', 'R', 'Oe', 'Rd', 'Ma', 'E', 'Ca', 'HT', 'HP', 'HO', 'CR', 'AF', 'AA']];
     const body: any[] = [];
     let grandTotalHT = 0, grandTotalHP = 0, grandTotalHO = 0, grandTotalCR = 0;
     this.planDeEstudios.areas.forEach(area => {
-        body.push([{ content: area.nombre, colSpan: 15, styles: { fontStyle: 'bold', fillColor: this.getAreaPdfColor(area.nombre) } }]);
-        area.materias.forEach(m => body.push([m.acd, m.clave, m.nombre, m.seriacion || '-', m.oe || '-', m.rd || '-', m.ma || '-', m.e || '-', m.ca || '-', m.ht, m.hp, m.ho, m.cr, m.af || '-', m.aa || '-']));
-        area.subAreas?.forEach(sa => {
-             body.push([{ content: sa.nombre, colSpan: 15, styles: { fontStyle: 'italic', fillColor: '#f0f0f0' } }]);
-             sa.materias.forEach(m => body.push([m.acd, m.clave, m.nombre, m.seriacion || '-', m.oe || '-', m.rd || '-', m.ma || '-', m.e || '-', m.ca || '-', m.ht, m.hp, m.ho, m.cr, m.af || '-', m.aa || '-']));
-        });
-        const subTotalHT = this.calculateTotal(area, 'ht');
-        const subTotalHP = this.calculateTotal(area, 'hp');
-        const subTotalHO = this.calculateTotal(area, 'ho');
-        const subTotalCR = this.calculateTotal(area, 'cr');
-        grandTotalHT += subTotalHT;
-        grandTotalHP += subTotalHP;
-        grandTotalHO += subTotalHO;
-        grandTotalCR += subTotalCR;
-        body.push([{ content: `Subtotal ${area.nombre}`, colSpan: 9, styles: { halign: 'right', fontStyle: 'bold' } }, subTotalHT, subTotalHP, subTotalHO, subTotalCR, '', '']);
+      body.push([{ content: area.nombre, colSpan: 14, styles: { fontStyle: 'bold', fillColor: this.getAreaPdfColor(area.nombre) } }]);
+      area.materias.forEach(m => body.push([m.acd, m.nombre, m.seriacion || '-', m.oe || '-', m.rd || '-', m.ma || '-', m.e || '-', m.ca || '-', m.ht, m.hp, m.ho, m.cr, m.af || '-', m.aa || '-']));
+      area.subAreas?.forEach(sa => {
+        body.push([{ content: sa.nombre, colSpan: 14, styles: { fontStyle: 'italic', fillColor: '#f0f0f0' } }]);
+        sa.materias.forEach(m => body.push([m.acd, m.nombre, m.seriacion || '-', m.oe || '-', m.rd || '-', m.ma || '-', m.e || '-', m.ca || '-', m.ht, m.hp, m.ho, m.cr, m.af || '-', m.aa || '-']));
+      });
+      const subTotalHT = this.calculateTotal(area, 'ht');
+      const subTotalHP = this.calculateTotal(area, 'hp');
+      const subTotalHO = this.calculateTotal(area, 'ho');
+      const subTotalCR = this.calculateTotal(area, 'cr');
+      grandTotalHT += subTotalHT;
+      grandTotalHP += subTotalHP;
+      grandTotalHO += subTotalHO;
+      grandTotalCR += subTotalCR;
+      body.push([{ content: `Subtotal ${area.nombre}`, colSpan: 8, styles: { halign: 'right', fontStyle: 'bold' } }, subTotalHT, subTotalHP, subTotalHO, subTotalCR, '', '']);
     });
-    body.push([{ content: 'Gran Total', colSpan: 9, styles: { halign: 'right', fontStyle: 'bold', fillColor: '#383838', textColor: '#ffffff' } }, grandTotalHT, grandTotalHP, grandTotalHO, grandTotalCR, '', '']);
+    body.push([{ content: 'Gran Total', colSpan: 8, styles: { halign: 'right', fontStyle: 'bold', fillColor: '#383838', textColor: '#ffffff' } }, grandTotalHT, grandTotalHP, grandTotalHO, grandTotalCR, '', '']);
     (doc as any).autoTable({
-        head: head,
-        body: body,
-        startY: yPos + 5,
-        theme: 'grid',
-        headStyles: { fillColor: [56, 56, 56] },
-        styles: { fontSize: 5, cellPadding: 1 },
-        columnStyles: { 2: { cellWidth: 40 }, },
-        didDrawPage: (data: any) => {
-            if (data.pageNumber > 1) {
-                (doc as any).autoTable({
-                    head: head,
-                    startY: 10,
-                    theme: 'grid',
-                    headStyles: { fillColor: [56, 56, 56] },
-                    styles: { fontSize: 5, cellPadding: 1 },
-                    columnStyles: { 2: { cellWidth: 40 }, }
-                });
-            }
-            const now = new Date();
-            const footerText = `Generado el: ${now.toLocaleDateString('es-MX')} ${now.toLocaleTimeString('es-MX')}`;
-            doc.setFontSize(4);
-            doc.setTextColor(100);
-            doc.text(footerText, data.settings.margin.left, doc.internal.pageSize.height - 5);
+      head: head,
+      body: body,
+      startY: yPos + 5,
+      theme: 'grid',
+      headStyles: { fillColor: [56, 56, 56] },
+      styles: { fontSize: 5, cellPadding: 1 },
+      columnStyles: { 1: { cellWidth: 40 }, },
+      didDrawPage: (data: any) => {
+        if (data.pageNumber > 1) {
+          (doc as any).autoTable({
+            head: head,
+            startY: 10,
+            theme: 'grid',
+            headStyles: { fillColor: [56, 56, 56] },
+            styles: { fontSize: 5, cellPadding: 1 },
+            columnStyles: { 1: { cellWidth: 40 }, }
+          });
         }
+        const now = new Date();
+        const footerText = `Generado el: ${now.toLocaleDateString('es-MX')} ${now.toLocaleTimeString('es-MX')}`;
+        doc.setFontSize(4);
+        doc.setTextColor(100);
+        doc.text(footerText, data.settings.margin.left, doc.internal.pageSize.height - 5);
+      }
     });
     doc.save(`Plan_de_Estudios_${this.planDeEstudios.nombre.replace(/ /g, '_')}.pdf`);
   }
@@ -536,17 +564,17 @@ export class AppComponent implements OnInit {
 
   async generateDocForMateria(materia: Materia): Promise<void> {
     console.log("Iniciando generación de documento para:", materia.nombre);
-    
+
     try {
       const templateUrl = 'assets/templates/_EE.docx';
       console.log(`Cargando plantilla desde: ${templateUrl}`);
-      
+
       const templateContent = await firstValueFrom(
         this.http.get(templateUrl, { responseType: 'arraybuffer' })
       );
 
       console.log("Plantilla cargada exitosamente. Procesando...");
-      
+
       // CAMBIO: Se corrige la forma de instanciar Docxtemplater
       const zip = new PizZip(templateContent);
       const doc = new Docxtemplater()
@@ -592,12 +620,12 @@ export class AppComponent implements OnInit {
 
   generateAllDocs(): void {
     if (confirm("Se generará un archivo .docx para cada experiencia educativa del plan de estudios. ¿Deseas continuar?")) {
-        this.planDeEstudios?.areas.forEach(area => {
-            area.materias?.forEach(materia => this.generateDocForMateria(materia));
-            area.subAreas?.forEach(subArea => {
-                subArea.materias?.forEach(materia => this.generateDocForMateria(materia));
-            });
+      this.planDeEstudios?.areas.forEach(area => {
+        area.materias?.forEach(materia => this.generateDocForMateria(materia));
+        area.subAreas?.forEach(subArea => {
+          subArea.materias?.forEach(materia => this.generateDocForMateria(materia));
         });
+      });
     }
   }
 }
