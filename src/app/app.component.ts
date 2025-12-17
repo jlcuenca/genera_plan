@@ -468,7 +468,7 @@ export class AppComponent implements OnInit {
       const ht = this.editingMateria.ht || 0;
       const hp = this.editingMateria.hp || 0;
       const ho = this.editingMateria.ho || 0;
-      this.editingMateria.cr = Math.round((ht * 1) + (hp * 1));
+      this.editingMateria.cr = (ht * 2) + hp + Math.floor(ho / 30);
     }
   }
 
@@ -562,70 +562,103 @@ export class AppComponent implements OnInit {
     return '#f8f9fa';
   }
 
+  // Método auxiliar para obtener el buffer de la plantilla
+  private async getTemplateBuffer(): Promise<ArrayBuffer> {
+    const templateUrl = 'assets/templates/_EE.docx';
+    return await firstValueFrom(this.http.get(templateUrl, { responseType: 'arraybuffer' }));
+  }
+
+  // Método auxiliar para preparar los datos de la plantilla
+  private getMateriaData(materia: Materia) {
+    return {
+      area_academica: this.planDeEstudios?.areaAcademica || 'N/A',
+      programa_educativo: this.planDeEstudios?.nombre || 'N/A',
+      clave: materia.clave,
+      nombre_ee: materia.nombre,
+      area_formacion: materia.af || 'N/A',
+      caracter: materia.ca || 'N/A',
+      ht: materia.ht,
+      hp: materia.hp,
+      ho: materia.ho,
+      total_horas: (materia.ht || 0) + (materia.hp || 0),
+      creditos: materia.cr,
+      prerrequisitos: materia.seriacion || 'Ninguno',
+      justificacion: materia.justificacion || '',
+      unidad_competencia: materia.unidadCompetencia || '',
+      saberes_heuristicos: materia.saberesHeuristicos || '',
+      saberes_teoricos: materia.saberesTeoricos || '',
+      saberes_axiologicos: materia.saberesAxiologicos || ''
+    };
+  }
+
+  // Método auxiliar para generar el contenido (bytes) del documento
+  private generateDocBytes(materia: Materia, templateContent: ArrayBuffer): any {
+    const zip = new PizZip(templateContent);
+    const doc = new Docxtemplater()
+      .loadZip(zip)
+      .setOptions({ paragraphLoop: true, linebreaks: true });
+
+    const dataForTemplate = this.getMateriaData(materia);
+
+    doc.setData(dataForTemplate);
+    doc.render();
+
+    return doc.getZip().generate({
+      type: 'arraybuffer',
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    });
+  }
+
   async generateDocForMateria(materia: Materia): Promise<void> {
     console.log("Iniciando generación de documento para:", materia.nombre);
-
     try {
-      const templateUrl = 'assets/templates/_EE.docx';
-      console.log(`Cargando plantilla desde: ${templateUrl}`);
-
-      const templateContent = await firstValueFrom(
-        this.http.get(templateUrl, { responseType: 'arraybuffer' })
-      );
-
-      console.log("Plantilla cargada exitosamente. Procesando...");
-
-      // CAMBIO: Se corrige la forma de instanciar Docxtemplater
-      const zip = new PizZip(templateContent);
-      const doc = new Docxtemplater()
-        .loadZip(zip)
-        .setOptions({ paragraphLoop: true, linebreaks: true });
-
-      const dataForTemplate = {
-        area_academica: this.planDeEstudios?.areaAcademica || 'N/A',
-        programa_educativo: this.planDeEstudios?.nombre || 'N/A',
-        clave: materia.clave,
-        nombre_ee: materia.nombre,
-        area_formacion: materia.af || 'N/A',
-        caracter: materia.ca || 'N/A',
-        ht: materia.ht,
-        hp: materia.hp,
-        ho: materia.ho,
-        total_horas: (materia.ht || 0) + (materia.hp || 0),
-        creditos: materia.cr,
-        prerrequisitos: materia.seriacion || 'Ninguno',
-        justificacion: materia.justificacion || '',
-        unidad_competencia: materia.unidadCompetencia || '',
-        saberes_heuristicos: materia.saberesHeuristicos || '',
-        saberes_teoricos: materia.saberesTeoricos || '',
-        saberes_axiologicos: materia.saberesAxiologicos || ''
-      };
-
-      doc.setData(dataForTemplate);
-      doc.render();
-
-      const out = doc.getZip().generate({
-        type: 'blob',
-        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      });
-
-      saveAs(out, `PEE_${materia.clave}_${materia.nombre}.docx`);
+      const templateContent = await this.getTemplateBuffer();
+      const docBytes = this.generateDocBytes(materia, templateContent);
+      const blob = new Blob([docBytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      saveAs(blob, `PEE_${materia.clave}_${materia.nombre}.docx`);
       console.log("Documento generado y descargado exitosamente.");
-
     } catch (error) {
       console.error("Error durante la generación del documento:", error);
-      alert("No se pudo generar el documento. Revisa la consola (F12) para más detalles. El error más común es que la plantilla no se encuentre en 'assets/templates/_EE.docx' o esté corrupta.");
+      alert("No se pudo generar el documento. Revisa la consola.");
     }
   }
 
-  generateAllDocs(): void {
-    if (confirm("Se generará un archivo .docx para cada experiencia educativa del plan de estudios. ¿Deseas continuar?")) {
-      this.planDeEstudios?.areas.forEach(area => {
-        area.materias?.forEach(materia => this.generateDocForMateria(materia));
+  async generateAllDocs(): Promise<void> {
+    if (!this.planDeEstudios) return;
+    if (!confirm("Se generará un archivo ZIP con los documentos de todas las experiencias educativas. ¿Deseas continuar?")) return;
+
+    try {
+      console.log("Iniciando generación masiva...");
+      // Descargar plantilla una sola vez
+      const templateContent = await this.getTemplateBuffer();
+      const masterZip = new PizZip();
+
+      const processMateria = (materia: Materia) => {
+        try {
+          const docBytes = this.generateDocBytes(materia, templateContent);
+          // Sanitizar nombre de archivo
+          const safeName = `PEE_${materia.clave || 'S_C'}_${materia.nombre}`.replace(/[^a-z0-9]/gi, '_').substring(0, 100);
+          masterZip.file(`${safeName}.docx`, docBytes);
+        } catch (e) {
+          console.error(`Error generando doc para ${materia.nombre}`, e);
+        }
+      };
+
+      this.planDeEstudios.areas.forEach(area => {
+        area.materias?.forEach(materia => processMateria(materia));
         area.subAreas?.forEach(subArea => {
-          subArea.materias?.forEach(materia => this.generateDocForMateria(materia));
+          subArea.materias?.forEach(materia => processMateria(materia));
         });
       });
+
+      const zipContent = masterZip.generate({ type: 'blob' });
+      const zipName = `Documentos_${this.planDeEstudios.nombre.replace(/ /g, '_')}.zip`;
+      saveAs(zipContent, zipName);
+      console.log("ZIP generado y descargado.");
+
+    } catch (error) {
+      console.error("Error en generación masiva:", error);
+      alert("Ocurrió un error al generar el ZIP.");
     }
   }
 }
