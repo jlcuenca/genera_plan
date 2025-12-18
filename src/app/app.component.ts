@@ -47,6 +47,7 @@ export class AppComponent implements OnInit {
   currentContext: { area: AreaFormacion, subArea?: SubArea } | null = null;
   isNewMateria = false;
   isPlanModalOpen = false;
+  isSaving = false;
   editingPlan: Partial<PlanDeEstudios> | null = null;
   optionsOe = Object.values(OportunidadEvaluacion);
   optionsRd = Object.values(RelacionDisciplinar);
@@ -124,10 +125,17 @@ export class AppComponent implements OnInit {
 
   saveChanges(): void {
     if (this.planDeEstudios && this.planId) {
+      this.isSaving = true;
       this.updatePlanDate();
       this.curriculumService.saveFullCurriculum(this.planId, this.planDeEstudios).subscribe({
-        next: (response) => { console.log(`Guardado con éxito: ${response.message}`); },
-        error: (err: any) => { console.error('Error al guardar los datos.', err); }
+        next: (response) => {
+          this.isSaving = false;
+          console.log(`Guardado con éxito: ${response.message}`);
+        },
+        error: (err: any) => {
+          this.isSaving = false;
+          console.error('Error al guardar los datos.', err);
+        }
       });
     }
   }
@@ -573,6 +581,9 @@ export class AppComponent implements OnInit {
     return {
       area_academica: this.planDeEstudios?.areaAcademica || 'N/A',
       programa_educativo: this.planDeEstudios?.nombre || 'N/A',
+      facultad: this.planDeEstudios?.facultad || 'N/A',
+      region: this.planDeEstudios?.regionImparte || 'N/A',
+      entidades: this.planDeEstudios?.sedeImparte || 'N/A',
       clave: materia.clave,
       nombre_ee: materia.nombre,
       area_formacion: materia.af || 'N/A',
@@ -587,7 +598,33 @@ export class AppComponent implements OnInit {
       unidad_competencia: materia.unidadCompetencia || '',
       saberes_heuristicos: materia.saberesHeuristicos || '',
       saberes_teoricos: materia.saberesTeoricos || '',
-      saberes_axiologicos: materia.saberesAxiologicos || ''
+      saberes_axiologicos: materia.saberesAxiologicos || '',
+      // Campos internos de la tabla
+      modalidad: materia.ma || '',
+      ambiente: materia.aa || '',
+      espacio: materia.e || '',
+      relacion: materia.rd || '',
+      oportunidades: materia.oe || '',
+      acd: materia.acd || '',
+      // Nuevos campos
+      estrategias_generales: materia.estrategiasGenerales || '',
+      apoyos_educativos: materia.apoyosEducativos || '',
+      perfil_docente: materia.perfilDocente || '',
+      acreditacion_ordinario: materia.acreditacion?.ordinario || '',
+      acreditacion_extraordinario: materia.acreditacion?.extraordinario || '',
+      acreditacion_suficiencia: materia.acreditacion?.suficiencia || '',
+      fecha_elaboracion: materia.formalizacion?.fechaElaboracion || '',
+      fecha_modificacion: materia.formalizacion?.fechaModificacion || '',
+      cuerpo_colegiado: materia.formalizacion?.cuerpoColegiado || '',
+      academicos: (materia.academicosElaboraron || []).join(', '),
+      fuentes: (materia.fuentesInformacion || []).join('\n'),
+      // Productos de evaluación como lista para loops {#productos} ... {/productos}
+      productos: (materia.evaluacionProductos || []).map(p => ({
+        evidencia: p.evidencia,
+        indicadores: p.indicadores,
+        procedimiento: p.procedimiento,
+        porcentaje: p.porcentaje
+      }))
     };
   }
 
@@ -615,7 +652,7 @@ export class AppComponent implements OnInit {
       const templateContent = await this.getTemplateBuffer();
       const docBytes = this.generateDocBytes(materia, templateContent);
       const blob = new Blob([docBytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-      saveAs(blob, `PEE_${materia.clave}_${materia.nombre}.docx`);
+      saveAs(blob, `PEE_${materia.nombre}.docx`);
       console.log("Documento generado y descargado exitosamente.");
     } catch (error) {
       console.error("Error durante la generación del documento:", error);
@@ -637,7 +674,7 @@ export class AppComponent implements OnInit {
         try {
           const docBytes = this.generateDocBytes(materia, templateContent);
           // Sanitizar nombre de archivo
-          const safeName = `PEE_${materia.clave || 'S_C'}_${materia.nombre}`.replace(/[^a-z0-9]/gi, '_').substring(0, 100);
+          const safeName = `PEE_${materia.nombre}`.replace(/[^a-z0-9]/gi, '_').substring(0, 100);
           masterZip.file(`${safeName}.docx`, docBytes);
         } catch (e) {
           console.error(`Error generando doc para ${materia.nombre}`, e);
